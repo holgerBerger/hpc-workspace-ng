@@ -1,0 +1,34 @@
+{
+        "authors": [
+                "Holger Berger"
+        ],
+        "copyright": "Copyright © 2021, Holger Berger",
+        "dependencies": {
+                "dyaml": "~>0.8.3"
+        },
+        "description": "workspace tools",
+        "license": "GPL-3.0",
+        "name": "ws_tools",
+	"configurations": [
+		{
+			"name": "ws_list",
+			"versions" : ["ws_list"],
+			"targetType" : "executable",
+			"sourcePaths": ["ws_list/", "ws_common/"],
+			"importPaths": ["ws_list/", "ws_common/"],
+			"mainSourceFile": "ws_list/ws_list.d",
+			"targetPath": "bin",
+			"targetName": "ws_list"
+		},
+		{
+			"name": "ws_allocate",
+			"versions" : ["ws_allocate"],
+			"targetType" : "executable",
+			"sourcePaths": ["ws_allocate/", "ws_common/"],
+			"importPaths": ["ws_allocate/", "ws_common/"],
+			"mainSourceFile": "ws_allocate/ws_allocate.d",
+			"targetPath": "bin",
+			"targetName": "ws_allocate"
+		}
+	]
+}
