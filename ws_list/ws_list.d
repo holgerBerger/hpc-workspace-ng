@@ -44,7 +44,15 @@ void main(string[] args)
 	}
 
 	// read config FIXME user can change this is no setuid installation OR if root
-	auto config =  new Config("ws.conf", opts);
+	string configfile = "/etc/ws.conf";
+	if (opts.configfile!="") {
+		if (isRoot() || notSetuid()) {
+			configfile = opts.configfile;	
+		} else {
+			stderr.writeln("warning: ignored config file options!");
+		}
+	}
+	auto config =  new Config(configfile, opts);
 
 	// root and admins can choose usernames
 	string username;
@@ -71,7 +79,7 @@ void main(string[] args)
 
 		// add pattern from commandline
 		if (args.length>1) {
-			pattern ~= args[1];
+			pattern ~= args[$-1];
 		} else {
 			pattern ~= "*";
 		}
@@ -91,7 +99,11 @@ void main(string[] args)
 
 		// iterate over filesystems
 		foreach(fs; fslist) {
-			stdout.writeln(db.matchPattern(pattern, fs, username, grouplist, opts.listexpired, opts.listgroups));
+			foreach(id; db.matchPattern(pattern, fs, username, grouplist, opts.listexpired, opts.listgroups)) {
+				stdout.writeln(">>",id);
+				auto entry = db.readEntry(fs, username, id, opts.listexpired);
+				stdout.writeln(entry);
+			}
 		}
 	}
 }

@@ -14,6 +14,11 @@ bool isRoot() {
 	else return false;
 }
 
+// check if this is process is not setuid
+bool notSetuid() {
+	return getuid() == geteuid();	
+}
+
 // get current username
 string getUsername() {
 	return getlogin().to!string;

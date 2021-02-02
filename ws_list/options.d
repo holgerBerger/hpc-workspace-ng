@@ -16,11 +16,12 @@ class Options {
 	bool sortbyremaining;
 	bool sortreverted;
 	bool terselisting;
+	string configfile;
 	bool verbose;
 	bool debugflag;
 
 
-	this(string[] args ) {
+	this(ref string[] args ) {
 		auto help = getopt(
 			args,
 			"filesystems|F", "filesystem to list workspaces from", &filesystem,
@@ -34,6 +35,7 @@ class Options {
 			"remaining|R", "sort by remaining time", &sortbyremaining,
 			"reverted|r", "revert sort", &sortreverted,
 			"terse|t", "terse listing", &terselisting,
+			"config", "config file", &configfile,
 			"verbose|v", "verbose listing", &verbose,
 			"debug", "debugging infomation", &debugflag
 		);	
