@@ -5,7 +5,21 @@
 import std.conv;
 import core.sys.posix.unistd;
 import core.sys.posix.grp;
+import core.sys.posix.pwd;
 import std.stdio;
+
+// get current username
+string getUsername() {
+    auto pw = getpwuid(getuid());
+    return pw.pw_name.to!string;
+}
+/*
+string getUsername() {
+	// FIXME this gives wrong user in case of su -
+	return getlogin().to!string;
+}
+*/
+
 
 // see if we are root
 bool isRoot() {
@@ -19,10 +33,6 @@ bool notSetuid() {
 	return getuid() == geteuid();	
 }
 
-// get current username
-string getUsername() {
-	return getlogin().to!string;
-}
 
 // get list of group names of current process
 string[] getGrouplist() {
