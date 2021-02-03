@@ -32,6 +32,7 @@ import std.algorithm;
 import options;
 import config;
 import user;
+import db;
 
 Options opts;
 
@@ -75,7 +76,8 @@ void main(string[] args)
 	} else {
 		auto db = config.OpenDB();
 		string pattern;
-
+		bool sort = opts.sortbyname || opts.sortbycreation || opts.sortbyremaining;
+		DBEntry[] entrylist;
 
 		// add pattern from commandline
 		if (args.length>1) {
@@ -99,12 +101,33 @@ void main(string[] args)
 
 		// iterate over filesystems
 		foreach(fs; fslist) {
-			foreach(id; db.matchPattern(pattern, fs, username, grouplist, opts.listexpired, opts.listgroups)) {
-				stdout.writeln(">>",id);
-				auto entry = db.readEntry(fs, username, id, opts.listexpired);
-				stdout.writeln(entry);
+			try {
+				foreach(id; db.matchPattern(pattern, fs, username, grouplist, opts.listexpired, opts.listgroups)) {
+					auto entry = db.readEntry(fs, username, id, opts.listexpired);
+					// if no sorting, print
+					if (!sort)
+						entry.print(opts.verbose, opts.terselisting);
+					else		
+						entrylist ~= entry;
+				}
+			} 
+			catch (std.file.FileException e) {
+				if(opts.debugflag) stdout.writeln("access error fs",fs);
 			}
 		}
+
+		if(sort) {
+			if(opts.sortbyremaining) std.algorithm.sort!( (x, y) => x.getRemaining > y.getRemaining )(entrylist);
+			if(opts.sortbycreation)  std.algorithm.sort!( (x, y) => x.getCreation > y.getCreation )(entrylist);
+			if(opts.sortbyname) 	 std.algorithm.sort!( (x, y) => x.getId > y.getId )(entrylist);
+
+			if(opts.sortreverted) entrylist.reverse;
+
+			foreach(entry; entrylist) {
+				entry.print(opts.verbose, opts.terselisting);
+			}
+		}
+		
 	}
 }
 
