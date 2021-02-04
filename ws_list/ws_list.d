@@ -32,17 +32,23 @@ import std.algorithm;
 import options;
 import config;
 import user;
+import exit;
 import db;
 
 Options opts;
 
-void main(string[] args)
+int main(string[] args)
 {
-	opts = new Options(args);
-
-	if (opts.verbose) {
-		dump_info();
+	try {
+		opts = new Options(args);
 	}
+	catch(ExitException e) {
+		return e.status;
+	}
+
+	// if (opts.verbose) {
+	//	dump_info();
+	// }
 
 	// read config FIXME user can change this is no setuid installation OR if root
 	string configfile = "/etc/ws.conf";
@@ -129,6 +135,7 @@ void main(string[] args)
 		}
 		
 	}
+	return 0;
 }
 
 version(unittest)
