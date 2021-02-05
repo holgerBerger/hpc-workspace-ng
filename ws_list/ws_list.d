@@ -120,11 +120,14 @@ int main(string[] args)
 			try {
 				foreach(id; db.matchPattern(pattern, fs, userpattern, grouplist, opts.listexpired, opts.listgroups)) {
 					auto entry = db.readEntry(fs, id.user, id.id, opts.listexpired);
-					// if no sorting, print, otherwise append to list
-					if (!sort) {
-						entry.print(opts.verbose, opts.terselisting);
-					} else {
-						entrylist ~= entry;
+					// if entry is valid
+					if (entry) {
+						// if no sorting, print, otherwise append to list
+						if (!sort) {
+							entry.print(opts.verbose, opts.terselisting);
+						} else {
+							entrylist ~= entry;
+						}
 					}
 				}
 			} 
