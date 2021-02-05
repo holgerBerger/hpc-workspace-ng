@@ -17,10 +17,17 @@ import yamlhelper;
 import core.stdc.time;
 
 
+// tuple that identiefies a workspace
+//  background: list of workspaces for admins must also return user
+struct wsID {
+	string user;
+	string id;
+}
+
 // interface to access the database
 interface Database {
 	// return list of entries 
-	string[] matchPattern(string pattern, string filesystem, string user, string[] groups, bool deleted, bool groupworkspaces);
+	wsID[] matchPattern(string pattern, string filesystem, string user, string[] groups, bool deleted, bool groupworkspaces);
 	// TODO
 	// read entry	
 	DBEntry readEntry(string filesystem, string user, string id, bool deleted);

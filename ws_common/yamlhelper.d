@@ -6,7 +6,7 @@ import dyaml;
 import config;
 
 // read value of type T with key
-T readValue(T)(in Node root, string key, T defaultvalue) {
+T readValue(T)(Node root, string key, T defaultvalue) {
 	if (root.containsKey(key)) 
 		return root[key].get!T;
 	else
@@ -16,13 +16,13 @@ T readValue(T)(in Node root, string key, T defaultvalue) {
 unittest {
 	auto root = Loader.fromString("key: value\nintkey: -1\nverbose: true").load();
 	// testing string value
-	assert(new Config().readValue!string(root, "key", "") == "value");
+	assert(readValue!string(root, "key", "") == "value");
 	// testing default value
-	assert(new Config().readValue!string(root, "keyless", "novalue") == "novalue");
+	assert(readValue!string(root, "keyless", "novalue") == "novalue");
 	// testing int
-	assert(new Config().readValue!int(root, "intkey", 0) == -1);
+	assert(readValue!int(root, "intkey", 0) == -1);
 	// testing bool
-	assert(new Config().readValue!bool(root, "verbose", false) == true);
+	assert(readValue!bool(root, "verbose", false) == true);
 }
 
 // read array of type T  with key
@@ -42,7 +42,7 @@ T[] readArray(T)(Node root, string key) {
 unittest {
 	auto root = Loader.fromString("ilist: [1,2,3]\nlist: [a,b,c]").load();
 	// testing string value
-	assert(new Config().readArray!string(root, "list") == ["a","b","c"]);
+	assert(readArray!string(root, "list") == ["a","b","c"]);
 	// testing int value
-	assert(new Config().readArray!int(root, "ilist") == [1,2,3]);
+	assert(readArray!int(root, "ilist") == [1,2,3]);
 }

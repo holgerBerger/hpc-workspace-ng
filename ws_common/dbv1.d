@@ -97,10 +97,11 @@ public:
 
 	// return list of identifiers of DB entries matching pattern from filesystem or all valid filesystems
 	//  does not check if request for "deleted" is valid, has to be done on caller side
-	string[] matchPattern(string pattern, string filesystem, string user, string[] groups, bool deleted, bool groupworkspaces) {
-		string[] fslist ;
+	wsID[] matchPattern(string pattern, string filesystem, string user, string[] groups, bool deleted, bool groupworkspaces) {
 		string filepattern;
 
+		/* FIXME dead code? remove?
+		string[] fslist ;
 		if (filesystem!="") {
 			if(config.hasAccess(user, groups, filesystem)) {
 				fslist ~= filesystem;
@@ -111,12 +112,19 @@ public:
 		} else {
 			fslist ~= config.validFilesystems(user, groups);
 		}
+		*/
+
+		// no access check with above core removed! has to happen on caller side!
 
 		string[] listdir(string pathname, string filepattern) {
 		    import std.algorithm;
 		    import std.array;
 		    import std.file;
 		    import std.path;
+
+		    debug {
+			stdout.writefln("debug: listdir(%s, %s)",pathname, filepattern);
+		    }
 
 		    return std.file.dirEntries(pathname, filepattern, SpanMode.shallow)
 			.filter!(a => a.isFile)
@@ -127,12 +135,18 @@ public:
 		// this has to happen here, as other DB might have different patterns
 		filepattern = user ~ "-" ~ pattern;
 
+		// helper to extract from filename the user-id part (assuming more is attached)
+		wsID extractID(string fn) {
+			auto pos=fn.indexOf('-');
+			return wsID(fn[0..pos],fn[pos+1..$]);
+		}
+ 
 		if (deleted) 
 			return listdir(buildPath(config.database(filesystem),config.deleted(filesystem)), filepattern).
-				map!(s => s[s.indexOf('-')+1..$]).array;
+				map!(extractID).array;
 		else 
 			return listdir(config.database(filesystem), filepattern).
-				map!(s => s[s.indexOf('-')+1..$]).array;
+				map!(extractID).array;
 	}
 
 	// read DBentry and return it

@@ -32,7 +32,6 @@ import std.algorithm;
 import options;
 import config;
 import user;
-import exit;
 import db;
 
 Options opts;
@@ -44,7 +43,7 @@ int main(string[] args)
 	}
 	catch (std.getopt.GetOptException e) {
 		stdout.writeln("error: unkown option", e);
-		exit(-1);
+		return -1;
 	}
 
 	// if (opts.verbose) {
@@ -63,15 +62,16 @@ int main(string[] args)
 	auto config =  new Config(configfile, opts);
 
 	// root and admins can choose usernames
-	string username;
+	string username = getUsername();	// used for rights checks
+	string userpattern;			// used for pattern matching in DB
 	if (isRoot() || config.isAdmin(getUsername())) {
 		if (opts.user!="") {
-			username = opts.user;	
+			userpattern = opts.user;	
 		} else {
-			username = "*";
+			userpattern = "*";
 		}	
 	} else {
-		username = getUsername();
+		userpattern = username;
 	}
 
 	// list of groups of this process
@@ -90,6 +90,8 @@ int main(string[] args)
 		bool sort = opts.sortbyname || opts.sortbycreation || opts.sortbyremaining;
 		DBEntry[] entrylist;
 
+		stdout.writeln("args: ", args.length, args);
+
 		// add pattern from commandline
 		if (args.length>1) {
 			pattern ~= args[$-1];
@@ -107,15 +109,15 @@ int main(string[] args)
 				stderr.writeln("error: invalid filesystem given.");
 			}
 		} else {
-			fslist = config.validFilesystems(username,grouplist);
+			fslist = validfs;
 		}
 
 		// iterate over filesystems and print or create list to be sorted
 		foreach(fs; fslist) {
 			// catch DB access errors, if DB directory or DB is accessible
 			try {
-				foreach(id; db.matchPattern(pattern, fs, username, grouplist, opts.listexpired, opts.listgroups)) {
-					auto entry = db.readEntry(fs, username, id, opts.listexpired);
+				foreach(id; db.matchPattern(pattern, fs, userpattern, grouplist, opts.listexpired, opts.listgroups)) {
+					auto entry = db.readEntry(fs, id.user, id.id, opts.listexpired);
 					// if no sorting, print, otherwise append to list
 					if (!sort) {
 						entry.print(opts.verbose, opts.terselisting);

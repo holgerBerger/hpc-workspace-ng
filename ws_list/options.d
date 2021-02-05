@@ -22,7 +22,9 @@ class Options {
 	bool debugflag;
 
 
-	this(ref string[] args ) {
+	// hack auto ref allows to be called with literals (in unit tests) and with ref in real code, 
+	//  but has to be template to work
+	this(T)(auto ref T[] args ) {
 		auto help = getopt(
 			args,
 			"filesystems|F", "filesystem to list workspaces from", &filesystem,

@@ -225,7 +225,7 @@ public:
 		// global, groupdefault, others
 		assert(config.validFilesystems("d",["gb"]) == ["third","first","second"]);
 
-		auto root2 = Loader.fromString(	
+		auto root2 = Loader.fromString(	"admins: [d]\n" ~
 						"workspaces:\n" ~
 						"  first:\n"~
 						"    user_acl: [+a,-b,d]\n"~
@@ -245,6 +245,8 @@ public:
 		assert(config2.validFilesystems("a",["gc","gb"]) == ["second","first","third"]);
 		// user first, others, no denied, not only for first user, multiple groups
 		assert(config2.validFilesystems("y",["ga","gc"]) == ["third","second"]);
+		// admin user check, sees all filesystems
+		assert(config2.validFilesystems("d",[]) == ["second", "third", "first"]);
 	}
 
 
