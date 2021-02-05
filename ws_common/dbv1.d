@@ -30,7 +30,13 @@ class DBEntryV1 : DBEntry {
 
 	// read db entry from yaml file
 	void readFromfile(string id, string filesystem, string filename) {
-		auto root = Loader.fromFile(filename).load();
+		Node root;
+		try {
+			root = Loader.fromFile(filename).load();
+		} catch (dyaml.exception.YAMLException e) {
+			stderr.writefln("error: yaml parser in file <%s>: %s", filename, e);
+		}
+
 		dbversion = readValue!int(root, "dbversion", 0); 	// 0 = legacy
 		this.id = id;
 		this.filesystem = filesystem;

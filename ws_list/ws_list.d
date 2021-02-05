@@ -90,7 +90,9 @@ int main(string[] args)
 		bool sort = opts.sortbyname || opts.sortbycreation || opts.sortbyremaining;
 		DBEntry[] entrylist;
 
-		stdout.writeln("args: ", args.length, args);
+		debug{
+			stderr.writeln("args: ", args.length, args);
+		}
 
 		// add pattern from commandline
 		if (args.length>1) {
