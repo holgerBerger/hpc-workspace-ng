@@ -33,6 +33,7 @@ import options;
 import config;
 import user;
 import db;
+import exit;
 
 Options opts;
 
@@ -44,6 +45,13 @@ int main(string[] args)
 	catch (std.getopt.GetOptException e) {
 		stdout.writeln("error: ", e.msg);
 		return -1;
+	}
+	catch (std.conv.ConvException e) {
+		stdout.writeln("error: ", e.msg);
+		return -1;
+	}
+	catch (exit.ExitException) {
+		return 0;
 	}
 
 	// if (opts.verbose) {
@@ -114,36 +122,45 @@ int main(string[] args)
 			fslist = validfs;
 		}
 
+		// no sorting for short format
+		if(opts.shortlisting) sort=false;
+
 		// iterate over filesystems and print or create list to be sorted
 		foreach(fs; fslist) {
 			// catch DB access errors, if DB directory or DB is accessible
 			try {
 				foreach(id; db.matchPattern(pattern, fs, userpattern, grouplist, opts.listexpired, opts.listgroups)) {
-					auto entry = db.readEntry(fs, id.user, id.id, opts.listexpired);
-					// if entry is valid
-					if (entry) {
-						// if no sorting, print, otherwise append to list
-						if (!sort) {
-							entry.print(opts.verbose, opts.terselisting);
-						} else {
-							entrylist ~= entry;
+					if (!opts.shortlisting) {
+						auto entry = db.readEntry(fs, id.user, id.id, opts.listexpired);
+						// if entry is valid
+						if (entry) {
+							// if no sorting, print, otherwise append to list
+							if (!sort) {
+								entry.print(opts.verbose, opts.terselisting);
+							} else {
+								entrylist ~= entry;
+							}
 						}
+					} else {
+						stdout.writeln(id.id);
 					}
 				}
 			} 
 			// FIXME in case of non file based DB, DB could throw something else
 			catch (std.file.FileException e) {
-				if(opts.debugflag) stdout.writeln("DB access error for fs <",fs,">");
+				if(opts.debugflag) stdout.writeln("DB access error for fs <",fs,">: ", e.msg);
 			}
 		}
 
 		// in case of sorted output, sort and print here
 		if(sort) {
-			if(opts.sortbyremaining) std.algorithm.sort!( (x, y) => x.getRemaining > y.getRemaining )(entrylist);
-			if(opts.sortbycreation)  std.algorithm.sort!( (x, y) => x.getCreation > y.getCreation )(entrylist);
-			if(opts.sortbyname) 	 std.algorithm.sort!( (x, y) => x.getId > y.getId )(entrylist);
+			if(opts.sortbyremaining) std.algorithm.sort!( (x, y) => x.getRemaining < y.getRemaining )(entrylist);
+			if(opts.sortbycreation)  std.algorithm.sort!( (x, y) => x.getCreation < y.getCreation )(entrylist);
+			if(opts.sortbyname) 	 std.algorithm.sort!( (x, y) => x.getId < y.getId )(entrylist);
 
-			if(opts.sortreverted) entrylist.reverse;
+			if(opts.sortreverted) {
+				entrylist.reverse;
+			}
 
 			foreach(entry; entrylist) {
 				entry.print(opts.verbose, opts.terselisting);

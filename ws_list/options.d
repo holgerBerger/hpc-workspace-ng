@@ -27,7 +27,8 @@ class Options {
 	this(T)(auto ref T[] args ) {
 		auto help = getopt(
 			args,
-			"filesystems|F", "filesystem to list workspaces from", &filesystem,
+			std.getopt.config.bundling, std.getopt.config.caseSensitive,
+			"filesystem|F", "filesystem to list workspaces from", &filesystem,
 			"group|g", "enable listing of grou workspaces", &listgroups,
 			"listfilesystems|l", "list available filesystems", &listfilesystems,
 			"short|s", "short listing, only workspace names", &shortlisting,
@@ -44,7 +45,7 @@ class Options {
 		);	
 
 		if (help.helpWanted) {
-			defaultGetoptPrinter("ws_list [options] [pattern]", help.options);
+			defaultGetoptPrinter("usage: ws_list [options] [pattern]\n\noptions:", help.options);
 			exit.exit(0);
 		}
 	}
