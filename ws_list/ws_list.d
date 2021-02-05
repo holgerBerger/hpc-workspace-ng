@@ -42,7 +42,7 @@ int main(string[] args)
 		opts = new Options(args);
 	}
 	catch (std.getopt.GetOptException e) {
-		stdout.writeln("error: unkown option", e);
+		stdout.writeln("error: ", e.msg);
 		return -1;
 	}
 

@@ -34,7 +34,7 @@ class DBEntryV1 : DBEntry {
 		try {
 			root = Loader.fromFile(filename).load();
 		} catch (dyaml.exception.YAMLException e) {
-			stderr.writefln("error: yaml parser in file <%s>: %s", filename, e);
+			stderr.writefln("error: yaml parser in file <%s>: %s", filename, e.msg);
 			return false;
 		}
 
