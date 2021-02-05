@@ -8,6 +8,7 @@ import std.array : array;
 import dyaml;
 import options;
 import db;
+import dbv1;
 import yamlhelper;
 
 
@@ -347,7 +348,7 @@ public:
 	// get DB matching the DB type of the config
 	Database OpenDB() {
 		// FIXME check database string for file:// pattern, if no : assume file
-		return new FilesystemDB(this);
+		return new FilesystemDBV1(this);
 	}
 
 }

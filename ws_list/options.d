@@ -3,6 +3,7 @@
 //
 
 import std.getopt;
+import exit;
 
 class Options {
 	string filesystem;
@@ -42,6 +43,7 @@ class Options {
 
 		if (help.helpWanted) {
 			defaultGetoptPrinter("ws_list [options] [pattern]", help.options);
+			exit.exit(0);
 		}
 	}
 

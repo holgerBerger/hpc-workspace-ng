@@ -37,7 +37,7 @@ import db;
 
 Options opts;
 
-void main(string[] args)
+int main(string[] args)
 {
 	try {
 		opts = new Options(args);
@@ -47,11 +47,11 @@ void main(string[] args)
 		exit(-1);
 	}
 
-	if (opts.verbose) {
-		dump_info();
-	}
+	// if (opts.verbose) {
+	//	dump_info();
+	// }
 
-	// read config user can change this fs no setuid installation OR if root
+	// read config FIXME user can change this is no setuid installation OR if root
 	string configfile = "/etc/ws.conf";
 	if (opts.configfile!="") {
 		if (isRoot() || notSetuid()) {
@@ -144,6 +144,7 @@ void main(string[] args)
 		}
 		
 	}
+	return 0;
 }
 
 version(unittest)
