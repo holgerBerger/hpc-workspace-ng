@@ -32,19 +32,26 @@ import std.algorithm;
 import options;
 import config;
 import user;
+import exit;
 import db;
 
 Options opts;
 
 void main(string[] args)
 {
-	opts = new Options(args);
+	try {
+		opts = new Options(args);
+	}
+	catch (std.getopt.GetOptException e) {
+		stdout.writeln("error: unkown option", e);
+		exit(-1);
+	}
 
 	if (opts.verbose) {
 		dump_info();
 	}
 
-	// read config FIXME user can change this is no setuid installation OR if root
+	// read config user can change this fs no setuid installation OR if root
 	string configfile = "/etc/ws.conf";
 	if (opts.configfile!="") {
 		if (isRoot() || notSetuid()) {
@@ -57,8 +64,12 @@ void main(string[] args)
 
 	// root and admins can choose usernames
 	string username;
-	if (isRoot() && opts.user!="") {
-		username = opts.user;	
+	if (isRoot() || config.isAdmin(getUsername())) {
+		if (opts.user!="") {
+			username = opts.user;	
+		} else {
+			username = "*";
+		}	
 	} else {
 		username = getUsername();
 	}
@@ -99,23 +110,27 @@ void main(string[] args)
 			fslist = config.validFilesystems(username,grouplist);
 		}
 
-		// iterate over filesystems
+		// iterate over filesystems and print or create list to be sorted
 		foreach(fs; fslist) {
+			// catch DB access errors, if DB directory or DB is accessible
 			try {
 				foreach(id; db.matchPattern(pattern, fs, username, grouplist, opts.listexpired, opts.listgroups)) {
 					auto entry = db.readEntry(fs, username, id, opts.listexpired);
-					// if no sorting, print
-					if (!sort)
+					// if no sorting, print, otherwise append to list
+					if (!sort) {
 						entry.print(opts.verbose, opts.terselisting);
-					else		
+					} else {
 						entrylist ~= entry;
+					}
 				}
 			} 
+			// FIXME in case of non file based DB, DB could throw something else
 			catch (std.file.FileException e) {
-				if(opts.debugflag) stdout.writeln("access error fs",fs);
+				if(opts.debugflag) stdout.writeln("DB access error for fs <",fs,">");
 			}
 		}
 
+		// in case of sorted output, sort and print here
 		if(sort) {
 			if(opts.sortbyremaining) std.algorithm.sort!( (x, y) => x.getRemaining > y.getRemaining )(entrylist);
 			if(opts.sortbycreation)  std.algorithm.sort!( (x, y) => x.getCreation > y.getCreation )(entrylist);

@@ -11,7 +11,7 @@ import db;
 import yamlhelper;
 
 
-// config of workspace
+// config of filesystem, part of global config
 struct Filesystem_config {
 	string name;			// name of filesystem
 	string[] spaces;		// prefix path in filesystem for workspaces
@@ -339,6 +339,10 @@ public:
 		return filesystems[filesystem].deleted;
 	}
 
+	// is user admin?
+	bool isAdmin(string user) {
+		return canFind(admins, user);
+	}			
 
 	// get DB matching the DB type of the config
 	Database OpenDB() {
