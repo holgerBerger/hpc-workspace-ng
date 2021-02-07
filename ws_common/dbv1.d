@@ -25,6 +25,7 @@ class DBEntryV1 : DBEntry {
 	long 	released;		// epoch time of manual release
 	long	reminder;		// epoch time of reminder to be sent out
 	int 	extensions;		// extensions, counting down
+	string	group;			// group for whom it is visible
 	string	mailaddress;		// address for reminder email
 	string 	comment;		// some user defined comment
 
@@ -49,6 +50,7 @@ class DBEntryV1 : DBEntry {
 		extensions = readValue!int(root, "extensions", 0); 	
 		mailaddress = readValue!string(root, "mailaddress", ""); 	
 		comment = readValue!string(root, "comment", ""); 	
+		group = readValue!string(root, "group", ""); 	
 		return true;
 	}
 
@@ -61,6 +63,9 @@ class DBEntryV1 : DBEntry {
 	}
 	string getId() {
 		return id;
+	}
+	string getGroup() {
+		return group;
 	}
 
 	void print(bool verbose, bool terse) {
@@ -124,37 +129,64 @@ public:
 
 		// no access check with above core removed! has to happen on caller side!
 
+		// list directory, this also reads YAML file in case of groupworkspaces
 		string[] listdir(string pathname, string filepattern) {
-		    import std.algorithm;
-		    import std.array;
-		    import std.file;
-		    import std.path;
+			import std.algorithm;
+			import std.array;
+			import std.file;
+			import std.path;
 
-		    debug {
+			debug {
 			stdout.writefln("debug: listdir(%s, %s)",pathname, filepattern);
-		    }
+			}
 
-		    return std.file.dirEntries(pathname, filepattern, SpanMode.shallow)
-			.filter!(a => a.isFile)
-			.map!(a => baseName(a.name))
-			.array;
+			// in case of groupworkspace, read entry
+			if (groupworkspaces) {
+				auto filelist = std.file.dirEntries(pathname, filepattern, SpanMode.shallow).filter!(a => a.isFile);
+				string[] list;
+				foreach(f; filelist) {
+					Node root;
+					try {
+						root = Loader.fromFile(f).load();
+					} catch (dyaml.exception.YAMLException e) {
+						stderr.writefln("error: yaml parser in file <%s>: %s", f, e.msg);
+						continue;
+					}
+					string group = readValue!string(root, "group", ""); 	
+					if (canFind(groups, group)) {
+						list ~= f;
+					}
+				}	
+				return list.map!(a => baseName(a)).array;
+			} else {
+				return std.file.dirEntries(pathname, filepattern, SpanMode.shallow)
+					.filter!(a => a.isFile)
+					.map!(a => baseName(a.name))
+					.array;
+			}
+
 		}	
 
 		// this has to happen here, as other DB might have different patterns
-		filepattern = user ~ "-" ~ pattern;
-
+		if (groupworkspaces)
+			filepattern = "*" ~ "-" ~ pattern;
+		else
+			filepattern = user ~ "-" ~ pattern;
+		
 		// helper to extract from filename the user-id part (assuming more is attached)
 		wsID extractID(string fn) {
 			auto pos=fn.indexOf('-');
 			return wsID(fn[0..pos],fn[pos+1..$]);
 		}
- 
+		
+		// scan filesystem
 		if (deleted) 
 			return listdir(buildPath(config.database(filesystem),config.deleted(filesystem)), filepattern).
 				map!(extractID).array;
 		else 
 			return listdir(config.database(filesystem), filepattern).
 				map!(extractID).array;
+
 	}
 
 	// read DBentry and return it
