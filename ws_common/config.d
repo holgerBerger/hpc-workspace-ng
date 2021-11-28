@@ -333,12 +333,17 @@ public:
 	// geter for database id
 	string database(string filesystem) {
 		// FIXME error check if filesystem exists
+		debug{
+			stderr.writefln("database(%s) = %s", filesystem, filesystems[filesystem].database);
+		}	
+		// HERE
 		return filesystems[filesystem].database;
 	}
 
 	// geter for database id
 	string deleted(string filesystem) {
 		// FIXME error check if filesystem exists
+		// throws core.exception.RangeError
 		return filesystems[filesystem].deleted;
 	}
 

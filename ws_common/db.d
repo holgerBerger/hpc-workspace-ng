@@ -38,11 +38,12 @@ interface Database {
 
 // interface for DBentry, allows printing and access for sorting
 interface DBEntry {
+	// print to stdout
 	void print(bool verbose, bool terse);
+	// sorting
 	long getRemaining();
 	string getId();
 	long getCreation();
-	string getGroup();
 }
 
 

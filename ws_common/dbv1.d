@@ -9,6 +9,7 @@ import dyaml;
 import yamlhelper;
 import core.stdc.time;
 import db;
+static import core.exception;
 
 // dbentry
 //  struct or assoc array?
@@ -16,8 +17,12 @@ import db;
 //  assoc would be very flexible and match the YAML model well, easy to extend
 //  and would carry unknown fields simply over. mix may be?
 class DBEntryV1 : DBEntry {
+private:
+	// information of external format
 	int	dbversion;		// version
 	string	id;			// ID of this workspace
+
+	// main components of external format
 	string	filesystem;		// location
 	string 	workspace;		// directory path
 	long	creation;		// epoch time of creation
@@ -28,6 +33,35 @@ class DBEntryV1 : DBEntry {
 	string	group;			// group for whom it is visible
 	string	mailaddress;		// address for reminder email
 	string 	comment;		// some user defined comment
+
+	//  create new entry in <filename>, to be called from database or tests, not for clients
+	void createFile(string filename, string _filesystem, string _user, string _id, string _workspace, long _creation, 
+		long _expiration, long _reminder, int _extensions, 
+		string _group, string _mailaddress, string _comment) {
+
+		auto a1 = ["workspace": _workspace, "group": _group, "mailaddress": _mailaddress, "comment": _comment];
+
+		auto node = Node(a1);
+		node.add("creation", _creation);
+		node.add("expiration", _expiration);
+		node.add("reminder", _reminder);
+		node.add("released", 0);
+		node.add("extensions", _extensions);
+
+		auto dumper = dumper();
+		dumper.defaultCollectionStyle = CollectionStyle.block;
+		//dumper.defaultScalarStyle = ScalarStyle.doubleQuoted;
+		//dumper.defaultScalarStyle = ScalarStyle.singleQuoted;
+		dumper.YAMLVersion = null; 	// disable version print in stop of file
+		// dumper.dump( File(filename,"w").lockingTextWriter(), node);
+		debug{
+			stderr.writeln("writing YAML to file ", filename);
+		}
+		auto of = File(filename,"w");
+		assert(of.isOpen);
+		dumper.dump(of.lockingTextWriter(), node);
+		of.close; 			// explicit close to make it visible in unittests
+	}
 
 	// read db entry from yaml file
 	bool readFromfile(string id, string filesystem, string filename) {
@@ -54,6 +88,8 @@ class DBEntryV1 : DBEntry {
 		return true;
 	}
 
+public:
+	// getters for sorting
 	long getRemaining() {
 		long remaining = expiration - time(cast(long *)0L);
 		return remaining;
@@ -64,10 +100,8 @@ class DBEntryV1 : DBEntry {
 	string getId() {
 		return id;
 	}
-	string getGroup() {
-		return group;
-	}
 
+	// print entry to stdout, for ws_list
 	void print(bool verbose, bool terse) {
 		string repr;
 		long remaining = expiration - time(cast(long *)0L);
@@ -99,7 +133,7 @@ class DBEntryV1 : DBEntry {
 }
 
 
-// implementations of legacy DB format from workspace++
+// implementation of legacy DB format from workspace++
 class FilesystemDBV1 : Database {
 private:
 	Config config;
@@ -202,4 +236,55 @@ public:
 		else		
 			return null;
 	}
+
+	// create and write a new DB entry
+	void createFile(string _filesystem, string _user, string _id, string _workspace, long _creation, 
+		long _expiration, long _reminder, int _extensions, 
+		string _group, string _mailaddress, string _comment) {
+		
+		auto db = new DBEntryV1(); 
+		string filename;
+		
+		filename = buildPath(config.database(_filesystem), _user ~ "-" ~ _id);
+
+		debug{
+			stderr.writeln("built path ", filename);
+		}
+
+		try{
+			db.createFile(filename, _filesystem, _user, _id, _workspace, _creation,
+				_expiration, _reminder, _extensions, _group, _mailaddress, _comment);
+		} 
+		catch (core.exception.RangeError e) {
+			stderr.writeln("error: invalid filesystem given: ", _filesystem);
+		}
+	}
+}
+
+
+
+unittest {
+	auto db1 = new DBEntryV1();
+
+	db1.createFile("/tmp/testfile_ws", "fs", "user" , "bla", "/lalala", 0L, 
+		0L, 0L, 3, 
+		"groupa", "a@b.com" , "useless commment");
+
+	auto db2 = new DBEntryV1();
+	auto ok = db2.readFromfile("bla", "fs", "/tmp/testfile_ws");
+	assert(ok);
+	assert(db2.workspace == "/lalala");
+}
+
+unittest {
+	import options;
+	auto root = Loader.fromString("filesystems:\n" ~
+					"  fs:\n" ~
+					"    database: /tmp/wsdb\n").load();
+	auto config = new Config(root, new Options( ["" /*,"--debug"*/ ] ));
+
+	auto db = new FilesystemDBV1(config);
+
+	db.createFile("fs1", "usera", "Atestws", "/lalala", -1, -1, -1, -3, "", "", "");
+	db.createFile("fs", "usera", "Ztestws", "/lalala", -1, -1, -1, -3, "", "", "");
 }

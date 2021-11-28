@@ -29,6 +29,8 @@
 import std.getopt;
 import std.stdio;
 import std.algorithm;
+import std.conv;
+import std.file;
 import options;
 import config;
 import user;
