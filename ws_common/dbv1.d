@@ -4,6 +4,8 @@ import std.algorithm;
 import std.array;
 import std.string;
 import std.conv;
+import std.exception;
+import std.file;
 import config;
 import dyaml;
 import yamlhelper;
@@ -35,7 +37,7 @@ private:
 	string 	comment;		// some user defined comment
 
 	//  create new entry in <filename>, to be called from database or tests, not for clients
-	void createFile(string filename, string _filesystem, string _user, string _id, string _workspace, long _creation, 
+	void createEntryFile(string filename, string _filesystem, string _user, string _id, string _workspace, long _creation, 
 		long _expiration, long _reminder, int _extensions, 
 		string _group, string _mailaddress, string _comment) {
 
@@ -252,7 +254,7 @@ public:
 		}
 
 		try{
-			db.createFile(filename, _filesystem, _user, _id, _workspace, _creation,
+			db.createEntryFile(filename, _filesystem, _user, _id, _workspace, _creation,
 				_expiration, _reminder, _extensions, _group, _mailaddress, _comment);
 		} 
 		catch (core.exception.RangeError e) {
@@ -264,9 +266,11 @@ public:
 
 
 unittest {
+	// test internal interface
+
 	auto db1 = new DBEntryV1();
 
-	db1.createFile("/tmp/testfile_ws", "fs", "user" , "bla", "/lalala", 0L, 
+	db1.createEntryFile("/tmp/testfile_ws", "fs", "user" , "bla", "/lalala", 0L, 
 		0L, 0L, 3, 
 		"groupa", "a@b.com" , "useless commment");
 
@@ -278,6 +282,15 @@ unittest {
 
 unittest {
 	import options;
+
+	try {
+		std.file.mkdir("/tmp/wsdb");
+	} 
+	catch (std.file.FileException)
+	{
+		// ignore
+	}
+
 	auto root = Loader.fromString("filesystems:\n" ~
 					"  fs:\n" ~
 					"    database: /tmp/wsdb\n").load();
@@ -285,6 +298,8 @@ unittest {
 
 	auto db = new FilesystemDBV1(config);
 
-	db.createFile("fs1", "usera", "Atestws", "/lalala", -1, -1, -1, -3, "", "", "");
-	db.createFile("fs", "usera", "Ztestws", "/lalala", -1, -1, -1, -3, "", "", "");
+	// this should work
+	assertNotThrown(db.createFile("fs", "usera", "Atestws", "/lalala", -1, -1, -1, -3, "", "", ""));
+	// this should fail as fs1 is not a valid filesystem
+	assertThrown(db.createFile("fs1", "usera", "Ztestws", "/lalala", -1, -1, -1, -3, "", "", ""));
 }

@@ -330,17 +330,20 @@ public:
 		assert(config.hasAccess("d",[""],"testacl") == true);
 	}
 
-	// geter for database id
+	// getter for database id, return "" if does not exist
 	string database(string filesystem) {
 		// FIXME error check if filesystem exists
-		debug{
-			stderr.writefln("database(%s) = %s", filesystem, filesystems[filesystem].database);
-		}	
-		// HERE
-		return filesystems[filesystem].database;
+		if (filesystem in filesystems) {
+			debug{
+				stderr.writefln("database(%s) = %s", filesystem, filesystems[filesystem].database);
+			}	
+			return filesystems[filesystem].database;
+		} else {
+			throw new InvalidFilesystemException("invalid fs <" ~ filesystem  ~ ">");
+		}
 	}
 
-	// geter for database id
+	// getter for database id
 	string deleted(string filesystem) {
 		// FIXME error check if filesystem exists
 		// throws core.exception.RangeError
@@ -358,4 +361,10 @@ public:
 		return new FilesystemDBV1(this);
 	}
 
+	class InvalidFilesystemException : Exception
+	{
+	    this(string msg, string file = __FILE__, size_t line = __LINE__) {
+		super(msg, file, line);
+	    }
+	}
 }
