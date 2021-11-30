@@ -27,10 +27,10 @@ struct wsID {
 // interface to access the database
 interface Database {
 	// return list of entries 
-	wsID[] matchPattern(string pattern, string filesystem, string user, string[] groups, bool deleted, bool groupworkspaces);
+	wsID[] matchPattern(const string pattern, const string filesystem, const string user, const string[] groups, const bool deleted, const bool groupworkspaces);
 	// TODO
 	// read entry	
-	DBEntry readEntry(string filesystem, string user, string id, bool deleted);
+	DBEntry readEntry(const string filesystem, const string user, const string id, const bool deleted);
 	// write entry
 	// expire entry
 	// ...	
@@ -39,7 +39,7 @@ interface Database {
 // interface for DBentry, allows printing and access for sorting
 interface DBEntry {
 	// print to stdout
-	void print(bool verbose, bool terse);
+	void print(const bool verbose, const bool terse);
 	// sorting
 	long getRemaining();
 	string getId();

@@ -37,9 +37,9 @@ private:
 	string 	comment;		// some user defined comment
 
 	//  create new entry in <filename>, to be called from database or tests, not for clients
-	void createEntryFile(string filename, string _filesystem, string _user, string _id, string _workspace, long _creation, 
-		long _expiration, long _reminder, int _extensions, 
-		string _group, string _mailaddress, string _comment) {
+	void createEntryFile(const string filename, const string _filesystem, const string _user, const string _id, const string _workspace, const long _creation, 
+		const long _expiration, const long _reminder, const int _extensions, 
+		const string _group, const string _mailaddress, const string _comment) {
 
 		auto a1 = ["workspace": _workspace, "group": _group, "mailaddress": _mailaddress, "comment": _comment];
 
@@ -66,7 +66,7 @@ private:
 	}
 
 	// read db entry from yaml file
-	bool readFromfile(string id, string filesystem, string filename) {
+	bool readFromfile(const string id, const string filesystem, const string filename) {
 		Node root;
 		try {
 			root = Loader.fromFile(filename).load();
@@ -104,7 +104,7 @@ public:
 	}
 
 	// print entry to stdout, for ws_list
-	void print(bool verbose, bool terse) {
+	void print(const bool verbose, const bool terse) {
 		string repr;
 		long remaining = expiration - time(cast(long *)0L);
 
@@ -146,7 +146,7 @@ public:
 
 	// return list of identifiers of DB entries matching pattern from filesystem or all valid filesystems
 	//  does not check if request for "deleted" is valid, has to be done on caller side
-	wsID[] matchPattern(string pattern, string filesystem, string user, string[] groups, bool deleted, bool groupworkspaces) {
+	wsID[] matchPattern(const string pattern, const string filesystem, const string user, const string[] groups, const bool deleted, const bool groupworkspaces) {
 		string filepattern;
 
 		/* FIXME dead code? remove?
@@ -217,7 +217,7 @@ public:
 		
 		// scan filesystem
 		if (deleted) 
-			return listdir(buildPath(config.database(filesystem),config.deleted(filesystem)), filepattern).
+			return listdir(buildPath(config.database(filesystem),config.deletedPath(filesystem)), filepattern).
 				map!(extractID).array;
 		else 
 			return listdir(config.database(filesystem), filepattern).
@@ -226,11 +226,11 @@ public:
 	}
 
 	// read DBentry and return it
-	DBEntryV1 readEntry(string filesystem, string user, string id, bool deleted) {
+	DBEntryV1 readEntry(const string filesystem, const string user, const string id, const bool deleted) {
 		auto entry = new DBEntryV1;
 		string filename;
 		if (deleted) 
-			filename = buildPath(config.database(filesystem), config.deleted(filesystem), user~"-"~id);
+			filename = buildPath(config.database(filesystem), config.deletedPath(filesystem), user~"-"~id);
 		else 
 			filename = buildPath(config.database(filesystem), user~"-"~id);
 		if (entry.readFromfile(id, filesystem, filename))
@@ -240,9 +240,9 @@ public:
 	}
 
 	// create and write a new DB entry
-	void createFile(string _filesystem, string _user, string _id, string _workspace, long _creation, 
-		long _expiration, long _reminder, int _extensions, 
-		string _group, string _mailaddress, string _comment) {
+	void createFile(const string _filesystem, const string _user, const string _id, const string _workspace, const long _creation, 
+		const long _expiration, const long _reminder, const int _extensions, 
+		const string _group, const string _mailaddress, const string _comment) {
 		
 		auto db = new DBEntryV1(); 
 		string filename;

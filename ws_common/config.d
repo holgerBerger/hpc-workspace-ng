@@ -16,7 +16,7 @@ import yamlhelper;
 struct Filesystem_config {
 	string name;			// name of filesystem
 	string[] spaces;		// prefix path in filesystem for workspaces
-	string deleted;			// subdirectory to move deleted workspaces to, relative path
+	string deletedPath;		// subdirectory to move deleted workspaces to, relative path
 	string database;		// path to workspace db for this filesystem
 	string[] groupdefault;		// groups having this filesystem as default
 	string[] userdefault;		// users having this filesytem as default
@@ -115,7 +115,7 @@ public:
 				Filesystem_config cfs;
 				cfs.name = fsname;
 				cfs.database = readValue!string(cnode, "database", "");
-				cfs.deleted = readValue!string(cnode, "deleted", "");
+				cfs.deletedPath = readValue!string(cnode, "deletedpath", "");
 				cfs.keeptime = readValue!int(cnode, "keeptime", 10);
 				cfs.maxduration = readValue!int(cnode, "maxduration", -1);
 				cfs.maxextensions = readValue!int(cnode, "maxextensions", -1);
@@ -152,7 +152,7 @@ public:
 	// SPEC: user acls are checked after groups for - entries, so users can be excluded after having group access
 	// SPEC:CHANGE: a user default does not override an ACL
 	// SPEC: admins have access to all filesystems
-	string[] validFilesystems(string user, string[] groups) {
+	string[] validFilesystems(const string user, const string[] groups) {
 		string[] validfs;
 
 		if (opts.debugflag) stderr.writefln("validFilesystems(%s,%s) over %s",user,groups,filesystems.keys);
@@ -254,7 +254,7 @@ public:
 
 	// check if given user can assess given filesystem with current config
 	//  see validFilesystems for specification of ACLs
-	bool hasAccess(string user, string[] groups, string filesystem) {
+	bool hasAccess(const string user, const string[] groups, const string filesystem) {
 		bool ok = true;
 
 		if (opts.debugflag) stderr.writefln("hasAccess(%s,%s,%s)",user,groups,filesystem);
@@ -331,8 +331,8 @@ public:
 	}
 
 	// getter for database id, return "" if does not exist
-	string database(string filesystem) {
-		// FIXME error check if filesystem exists
+	string database(const string filesystem) {
+		// check if filesystem exists
 		if (filesystem in filesystems) {
 			debug{
 				stderr.writefln("database(%s) = %s", filesystem, filesystems[filesystem].database);
@@ -344,14 +344,14 @@ public:
 	}
 
 	// getter for database id
-	string deleted(string filesystem) {
+	string deletedPath(const string filesystem) {
 		// FIXME error check if filesystem exists
 		// throws core.exception.RangeError
-		return filesystems[filesystem].deleted;
+		return filesystems[filesystem].deletedPath;
 	}
 
 	// is user admin?
-	bool isAdmin(string user) {
+	bool isAdmin(const string user) {
 		return canFind(admins, user);
 	}			
 
@@ -361,6 +361,7 @@ public:
 		return new FilesystemDBV1(this);
 	}
 
+	// exception for filesystem not in workspace config
 	class InvalidFilesystemException : Exception
 	{
 	    this(string msg, string file = __FILE__, size_t line = __LINE__) {
