@@ -60,7 +60,7 @@ int main(string[] args)
 	//	dump_info();
 	// }
 
-	// read config FIXME user can change this is no setuid installation OR if root
+	// read config FIXME user can change this if no setuid installation OR if root
 	string configfile = "/etc/ws.conf";
 	if (opts.configfile!="") {
 		if (isRoot() || notSetuid()) {
