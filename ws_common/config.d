@@ -72,6 +72,7 @@ public:
 		readYAML(root);
 	}
 
+	// REVIEW why? is that still needed?
 	version(unittest)
 	this() {
 	}
