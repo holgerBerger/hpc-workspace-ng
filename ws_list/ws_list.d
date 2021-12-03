@@ -95,7 +95,7 @@ int main(string[] args)
 			stdout.writeln(fs);
 		}
 	} else {
-		auto db = config.OpenDB();
+		auto db = config.openDB();
 		string pattern;
 		bool sort = opts.sortbyname || opts.sortbycreation || opts.sortbyremaining;
 		DBEntry[] entrylist;

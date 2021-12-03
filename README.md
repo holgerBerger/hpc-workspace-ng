@@ -18,7 +18,7 @@ this is not yet usefull or usable.
 
 - in first step, be compatible to hpc-workspace++
 - read old configs and old database
-- prepare for new database format, with on-the-fly migration
+- prepare for new database format, with on-the-fly migration (?)
 - clean up some naming mess
 - new configuration can be split in several files (easyer to have partially different configs with shared filesystems)
 - proper DB abstraction, a future DB could be even a DBMS

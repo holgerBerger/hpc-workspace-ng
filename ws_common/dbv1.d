@@ -10,6 +10,7 @@ import config;
 import dyaml;
 import yamlhelper;
 import core.stdc.time;
+// import core.stdc.stdlib : exit;
 import db;
 static import core.exception;
 
@@ -59,13 +60,15 @@ private:
 		debug{
 			stderr.writeln("writing YAML to file ", filename);
 		}
-		auto of = File(filename,"w");
+		auto of = File(filename,"w");	// we ignore that this can throw, internal routine
 		assert(of.isOpen);
 		dumper.dump(of.lockingTextWriter(), node);
 		of.close; 			// explicit close to make it visible in unittests
 	}
 
 	// read db entry from yaml file
+	//  return false error, prints error message, true on success
+	//  unittest: yes
 	bool readFromfile(const string id, const string filesystem, const string filename) {
 		Node root;
 		try {
@@ -146,16 +149,18 @@ public:
 
 	// return list of identifiers of DB entries matching pattern from filesystem or all valid filesystems
 	//  does not check if request for "deleted" is valid, has to be done on caller side
+	//  throws IO exceptions in case of access problems
+	//  unittest: no
 	wsID[] matchPattern(const string pattern, const string filesystem, const string user, const string[] groups, const bool deleted, const bool groupworkspaces) {
 		string filepattern;
 
-		/* FIXME dead code? remove?
+		/* FIXME: dead code? remove?
 		string[] fslist ;
 		if (filesystem!="") {
 			if(config.hasAccess(user, groups, filesystem)) {
 				fslist ~= filesystem;
 			} else {
-				// FIXME exception here instead of IO? will throw up ugly later anyhow
+				// FIXME: exception here instead of IO? will throw up ugly later anyhow
 				stderr.writeln("error: invalid filesystem specified.");
 			}
 		} else {
@@ -173,7 +178,7 @@ public:
 			import std.path;
 
 			debug {
-			stdout.writefln("debug: listdir(%s, %s)",pathname, filepattern);
+				stdout.writefln("debug: listdir(%s, %s)",pathname, filepattern);
 			}
 
 			// in case of groupworkspace, read entry
@@ -226,6 +231,8 @@ public:
 	}
 
 	// read DBentry and return it
+	//  return null on error, entry on success
+	//  unittest: yes
 	DBEntryV1 readEntry(const string filesystem, const string user, const string id, const bool deleted) {
 		auto entry = new DBEntryV1;
 		string filename;
@@ -240,6 +247,8 @@ public:
 	}
 
 	// create and write a new DB entry
+	//  throws after printing error message in case of IO errors
+	//  unittest: yes
 	void createFile(const string _filesystem, const string _user, const string _id, const string _workspace, const long _creation, 
 		const long _expiration, const long _reminder, const int _extensions, 
 		const string _group, const string _mailaddress, const string _comment) {
@@ -259,6 +268,11 @@ public:
 		} 
 		catch (core.exception.RangeError e) {
 			stderr.writeln("error: invalid filesystem given: ", _filesystem);
+			throw e;
+		}
+		catch (std.exception.ErrnoException e) {
+			stderr.writeln("error: could not create DB entry (", e.msg,")");
+			throw e;
 		}
 	}
 }
@@ -275,12 +289,19 @@ unittest {
 		"groupa", "a@b.com" , "useless commment");
 
 	auto db2 = new DBEntryV1();
+	// should work
 	auto ok = db2.readFromfile("bla", "fs", "/tmp/testfile_ws");
 	assert(ok);
 	assert(db2.workspace == "/lalala");
+
+	// bad name
+	ok = db2.readFromfile("bla", "fs", "/tmp/testfile_wX");
+	assert(ok==false);
 }
 
 unittest {
+	// test external interface
+
 	import options;
 
 	try {
@@ -288,7 +309,7 @@ unittest {
 	} 
 	catch (std.file.FileException)
 	{
-		// ignore
+		// ignore, proably already exists
 	}
 
 	auto root = Loader.fromString("filesystems:\n" ~
@@ -301,5 +322,17 @@ unittest {
 	// this should work
 	assertNotThrown(db.createFile("fs", "usera", "Atestws", "/lalala", -1, -1, -1, -3, "", "", ""));
 	// this should fail as fs1 is not a valid filesystem
-	assertThrown(db.createFile("fs1", "usera", "Ztestws", "/lalala", -1, -1, -1, -3, "", "", ""));
+	assertThrown(db.createFile("fs1", "usera", "Ztestws", "/lalala", -1, -1, -1, -3, "", "", ""));	
+
+	DBEntryV1 entry;
+	// should work
+	assertNotThrown(entry = db.readEntry("fs", "usera", "Atestws", false));
+	assert(entry !is null);
+	assert(entry.extensions == -3);
+	
+	// should fail, invalid user
+	stderr.writeln("error expected... 321");
+	entry = db.readEntry("fs", "user", "Atestws", false);
+	assert(entry is null);
+
 }

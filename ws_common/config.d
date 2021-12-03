@@ -79,7 +79,7 @@ public:
 
 	// read YAML from node into config class
 	private void readYAML(Node root) {
-		// FIXME this prevents multiple config files, should not overwrite previous values
+		// FIXME: this prevents multiple config files, should not overwrite previous values
 		// this would be ok if this is old style reade only used for first file and addition files	
 		// would be read with additional reader
 
@@ -346,7 +346,7 @@ public:
 
 	// getter for database id
 	string deletedPath(const string filesystem) {
-		// FIXME error check if filesystem exists
+		// FIXME: error check if filesystem exists
 		// throws core.exception.RangeError
 		return filesystems[filesystem].deletedPath;
 	}
@@ -357,8 +357,8 @@ public:
 	}			
 
 	// get DB matching the DB type of the config
-	Database OpenDB() {
-		// FIXME check database string for file:// pattern, if no : assume file
+	Database openDB() {
+		// FIXME: check database string for file:// pattern, if no : assume file
 		return new FilesystemDBV1(this);
 	}
 
