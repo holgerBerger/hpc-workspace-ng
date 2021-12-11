@@ -60,7 +60,8 @@ int main(string[] args)
 	//	dump_info();
 	// }
 
-	// read config FIXME user can change this if no setuid installation OR if root
+	// read config 
+	//   user can change this if no setuid installation OR if root
 	string configfile = "/etc/ws.conf";
 	if (opts.configfile!="") {
 		if (isRoot() || notSetuid()) {
@@ -148,7 +149,7 @@ int main(string[] args)
 					}
 				}
 			} 
-			// FIXME in case of non file based DB, DB could throw something else
+			// FIXME: in case of non file based DB, DB could throw something else
 			catch (std.file.FileException e) {
 				if(opts.debugflag) stdout.writeln("DB access error for fs <",fs,">: ", e.msg);
 			}

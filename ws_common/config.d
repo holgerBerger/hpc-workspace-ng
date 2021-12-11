@@ -134,9 +134,9 @@ public:
 	}
 	
 
-	// TODO basic validator, like: any filesystems at all? dbuid/dbgid set?
+	// TODO: basic validator, like: any filesystems at all? dbuid/dbgid set?
 
-	// TODO reader for additional files
+	// TODO: reader for additional files
 
 
 	// 
@@ -352,7 +352,7 @@ public:
 	}
 
 	// is user admin?
-	bool isAdmin(const string user) {
+	bool isAdmin(const string user) const {
 		return canFind(admins, user);
 	}			
 
@@ -360,6 +360,11 @@ public:
 	Database openDB() {
 		// FIXME: check database string for file:// pattern, if no : assume file
 		return new FilesystemDBV1(this);
+	}
+
+	// get names of filesystems in that configuration file
+	string[] filesystemlist() const {
+		return filesystems.keys;
 	}
 
 	// exception for filesystem not in workspace config

@@ -249,6 +249,7 @@ public:
 	// create and write a new DB entry
 	//  throws after printing error message in case of IO errors
 	//  unittest: yes
+	// FIXME: is createFile the right name for public interface? writeentry?
 	void createFile(const string _filesystem, const string _user, const string _id, const string _workspace, const long _creation, 
 		const long _expiration, const long _reminder, const int _extensions, 
 		const string _group, const string _mailaddress, const string _comment) {

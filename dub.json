@@ -29,6 +29,16 @@
 			"mainSourceFile": "ws_allocate/ws_allocate.d",
 			"targetPath": "bin",
 			"targetName": "ws_allocate"
+		},
+		{
+			"name": "ws_expirer",
+			"versions" : ["ws_expirer"],
+			"targetType" : "executable",
+			"sourcePaths": ["ws_expirer/", "ws_common/"],
+			"importPaths": ["ws_expirer/", "ws_common/"],
+			"mainSourceFile": "ws_expirer/ws_expirer.d",
+			"targetPath": "bin",
+			"targetName": "ws_expirer"
 		}
 	]
 }
