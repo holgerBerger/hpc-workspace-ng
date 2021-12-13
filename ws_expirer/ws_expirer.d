@@ -44,6 +44,7 @@ import std.stdio;
 import std.algorithm;
 import std.conv;
 import std.file;
+import std.array;
 import options;
 import config;
 import user;
@@ -91,7 +92,8 @@ int main(string[] args)
 	auto config = new Config(configfile, opts);
 
     if(opts.filesystems) {
-        fslist=opts.filesystems;
+        fslist = opts.filesystems;
+        // FIXME: verify that fs exists in config
     } else {
         fslist = config.filesystemlist;
     }
@@ -103,6 +105,21 @@ int main(string[] args)
     }
 
 
+    foreach(string fs; fslist) {
+        clean_stray_directories(config, fs, opts.dryrun);
+    }
 
     return 0;
+}
+
+
+void clean_stray_directories(Config config, const string fs, const bool dryrun) {
+    
+    string[] spaces = config.spaceslist(fs);
+    string[] dirs;
+
+    foreach(string space; spaces) {
+            dirs ~= std.file.dirEntries(space, "*", SpanMode.shallow).filter!(a => a.isDir).map!(a => a.name).array;
+    }
+    stderr.writeln(dirs);
 }

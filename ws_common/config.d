@@ -367,6 +367,11 @@ public:
 		return filesystems.keys;
 	}
 
+	// get list of filesystem spaces
+	string[] spaceslist(string filesystem)  {
+		return filesystems[filesystem].spaces;
+	}
+
 	// exception for filesystem not in workspace config
 	class InvalidFilesystemException : Exception
 	{
