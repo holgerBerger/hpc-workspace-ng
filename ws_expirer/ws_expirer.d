@@ -116,10 +116,11 @@ int main(string[] args)
 void clean_stray_directories(Config config, const string fs, const bool dryrun) {
     
     string[] spaces = config.spaceslist(fs);
-    string[] dirs;
+    string[] dirs;      // list of all directories in all spaces of 'fs'
 
     foreach(string space; spaces) {
-            dirs ~= std.file.dirEntries(space, "*", SpanMode.shallow).filter!(a => a.isDir).map!(a => a.name).array;
+            dirs ~= std.file.dirEntries(space, "*-*", SpanMode.shallow).filter!(a => a.isDir).map!(a => a.name).array;
+            // NOTE: *-* for compatibility with old expirer
     }
     stderr.writeln(dirs);
 }
