@@ -116,7 +116,7 @@ public:
 				Filesystem_config cfs;
 				cfs.name = fsname;
 				cfs.database = readValue!string(cnode, "database", "");
-				cfs.deletedPath = readValue!string(cnode, "deletedpath", "");
+				cfs.deletedPath = readValue!string(cnode, "deleted", "");
 				cfs.keeptime = readValue!int(cnode, "keeptime", 10);
 				cfs.maxduration = readValue!int(cnode, "maxduration", -1);
 				cfs.maxextensions = readValue!int(cnode, "maxextensions", -1);
@@ -336,7 +336,7 @@ public:
 		// check if filesystem exists
 		if (filesystem in filesystems) {
 			debug{
-				stderr.writefln("database(%s) = %s", filesystem, filesystems[filesystem].database);
+				stderr.writefln(" debug: [%s] database(%s) = %s", __FUNCTION__, filesystem, filesystems[filesystem].database);
 			}	
 			return filesystems[filesystem].database;
 		} else {
