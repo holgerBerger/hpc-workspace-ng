@@ -102,7 +102,7 @@ int main(string[] args)
 		DBEntry[] entrylist;
 
 		debug{
-			stderr.writeln("args: ", args.length, args);
+			stderr.writeln("debug: (",__FUNCTION__,") args: ", args.length, args);
 		}
 
 		// add pattern from commandline

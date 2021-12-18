@@ -58,7 +58,7 @@ private:
 		dumper.YAMLVersion = null; 	// disable version print in stop of file
 		// dumper.dump( File(filename,"w").lockingTextWriter(), node);
 		debug{
-			stderr.writeln("writing YAML to file ", filename);
+			stderr.writeln(" debug: [",__FUNCTION__,"] writing YAML to file ", filename);
 		}
 		auto of = File(filename,"w");	// we ignore that this can throw, internal routine
 		assert(of.isOpen);
@@ -74,7 +74,9 @@ private:
 		try {
 			root = Loader.fromFile(filename).load();
 		} catch (dyaml.exception.YAMLException e) {
-			stderr.writefln("error: yaml parser in file <%s>: %s", filename, e.msg);
+			debug{
+				stderr.writefln(" debug: [%s] yaml parser %s", __FUNCTION__, e.msg);
+			}
 			return false;
 		}
 
@@ -104,6 +106,9 @@ public:
 	}
 	string getId() {
 		return id;
+	}
+	string getWSPath() {
+		return workspace;
 	}
 
 	// print entry to stdout, for ws_list
@@ -178,7 +183,7 @@ public:
 			import std.path;
 
 			debug {
-				stdout.writefln("debug: listdir(%s, %s)",pathname, filepattern);
+				stderr.writefln(" debug: [%s] listdir(%s, %s)", __FUNCTION__, pathname, filepattern);
 			}
 
 			// in case of groupworkspace, read entry
@@ -260,7 +265,7 @@ public:
 		filename = buildPath(config.database(_filesystem), _user ~ "-" ~ _id);
 
 		debug{
-			stderr.writeln("built path ", filename);
+			stderr.writeln(" debug: [",__FUNCTION__,"] built path ", filename);
 		}
 
 		try{

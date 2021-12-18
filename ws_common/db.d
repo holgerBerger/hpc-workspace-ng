@@ -47,6 +47,6 @@ interface DBEntry {
 	long getRemaining();
 	string getId();
 	long getCreation();
+	string getWSPath();
 }
-
 

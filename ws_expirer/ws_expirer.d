@@ -45,6 +45,7 @@ import std.algorithm;
 import std.conv;
 import std.file;
 import std.array;
+import std.path : buildPath, baseName;
 import options;
 import config;
 import user;
@@ -91,11 +92,15 @@ int main(string[] args)
 	}
 	auto config = new Config(configfile, opts);
 
-    if(opts.filesystems) {
+    if(opts.filesystems.length>0) {
         fslist = opts.filesystems;
         // FIXME: verify that fs exists in config
     } else {
         fslist = config.filesystemlist;
+    }
+
+    debug{
+        stderr.writeln(" debug: [",__FUNCTION__,"] fslist: ",fslist);
     }
 
     if(opts.dryrun) {
@@ -103,7 +108,6 @@ int main(string[] args)
     } else {
         stdout.writeln("really cleanin...");
     }
-
 
     foreach(string fs; fslist) {
         clean_stray_directories(config, fs, opts.dryrun);
@@ -115,12 +119,92 @@ int main(string[] args)
 
 void clean_stray_directories(Config config, const string fs, const bool dryrun) {
     
+    long valid=0;
+    long invalid=0;
+
     string[] spaces = config.spaceslist(fs);
     string[] dirs;      // list of all directories in all spaces of 'fs'
 
+    stdout.writeln("PHASE: stray directory removel for ", fs);
+    stdout.writeln("workspaces first...");
+
+    // find directories first, check DB entries later, to prevent data race with workspaces
+    // getting created while this is running
     foreach(string space; spaces) {
             dirs ~= std.file.dirEntries(space, "*-*", SpanMode.shallow).filter!(a => a.isDir).map!(a => a.name).array;
             // NOTE: *-* for compatibility with old expirer
     }
-    stderr.writeln(dirs);
+    debug{
+        stderr.writeln(" debug: [",__FUNCTION__,"] dirs: ",dirs);
+    }
+
+
+    // get all workspace pathes from DB
+    auto db = config.openDB();
+    auto wsIDs = db.matchPattern("*", fs, "*", null, false, false );
+    debug{
+        stderr.writeln(" debug: [",__FUNCTION__,"] wsIDs: ", wsIDs);
+    }
+    string[] workspacesInDB;
+    workspacesInDB.reserve(wsIDs.length);
+    foreach(wsID wsid; wsIDs) {
+        // this is very defensiv, reading should not fail
+        auto e = db.readEntry(fs, wsid.user, wsid.id, false);
+        assert(e !is null);
+        if (e!is null) workspacesInDB ~= e.getWSPath();
+    }
+    debug{
+        stderr.writeln(" debug: [",__FUNCTION__,"] workspacesInDB: ", workspacesInDB);
+    }
+
+    // compare filesystem with DB
+    foreach(string dir; dirs) {
+        if(!canFind(workspacesInDB, dir)) {
+            stdout.writeln("  stray workspace", dir);
+            // TODO: move to deleted
+            invalid++;
+        } else {
+            valid++;
+        }
+    }
+
+    stdout.writefln("%d valid, %d invalid directories found.", valid, invalid);
+
+    stdout.writeln("deleted workspaces second...");
+    valid=0;
+    invalid=0;
+    dirs.length=0;
+    // directory entries first
+    foreach(string space; spaces) {
+            dirs ~= std.file.dirEntries(buildPath(space,config.deletedPath(fs)), "*-*", SpanMode.shallow).filter!(a => a.isDir).map!(a => a.name).array;
+            // NOTE: *-* for compatibility with old expirer
+    }
+    debug{
+        stderr.writeln(" debug: [",__FUNCTION__,"] dirs: ",dirs);
+    }
+
+    // get all workspace names from DB, this contains the timestamp
+    wsIDs = db.matchPattern("*", fs, "*", null, true, false );
+    debug{
+        stderr.writeln(" debug: [",__FUNCTION__,"] wsIDs: ", wsIDs);
+    }
+    workspacesInDB.length=0;
+    foreach(wsID wsid; wsIDs) {
+        workspacesInDB ~= (wsid.user ~ "-" ~ wsid.id);
+    }
+    debug{
+        stderr.writeln(" debug: [",__FUNCTION__,"] workspacesInDB: ", workspacesInDB);
+    }
+
+    // compare filesystem with DB
+    foreach(string dir; dirs) {
+        if(!canFind(workspacesInDB, baseName(dir))) {
+            stdout.writeln("  stray workspace", dir);
+            // TODO: move to deleted
+            invalid++;
+        } else {
+            valid++;
+        }
+    }
+    stdout.writefln("%d valid, %d invalid directories found.", valid, invalid);
 }
