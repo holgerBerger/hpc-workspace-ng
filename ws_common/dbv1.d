@@ -250,7 +250,7 @@ public:
 	//  throws after printing error message in case of IO errors
 	//  unittest: yes
 	// FIXME: is createFile the right name for public interface? writeentry?
-	void createFile(const string _filesystem, const string _user, const string _id, const string _workspace, const long _creation, 
+	void createEntry(const string _filesystem, const string _user, const string _id, const string _workspace, const long _creation, 
 		const long _expiration, const long _reminder, const int _extensions, 
 		const string _group, const string _mailaddress, const string _comment) {
 		
@@ -296,6 +296,7 @@ unittest {
 	assert(db2.workspace == "/lalala");
 
 	// bad name
+	// FIXME: supress output of failing tests
 	ok = db2.readFromfile("bla", "fs", "/tmp/testfile_wX");
 	assert(ok==false);
 }
@@ -321,9 +322,9 @@ unittest {
 	auto db = new FilesystemDBV1(config);
 
 	// this should work
-	assertNotThrown(db.createFile("fs", "usera", "Atestws", "/lalala", -1, -1, -1, -3, "", "", ""));
+	assertNotThrown(db.createEntry("fs", "usera", "Atestws", "/lalala", -1, -1, -1, -3, "", "", ""));
 	// this should fail as fs1 is not a valid filesystem
-	assertThrown(db.createFile("fs1", "usera", "Ztestws", "/lalala", -1, -1, -1, -3, "", "", ""));	
+	assertThrown(db.createEntry("fs1", "usera", "Ztestws", "/lalala", -1, -1, -1, -3, "", "", ""));	
 
 	DBEntryV1 entry;
 	// should work

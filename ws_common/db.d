@@ -17,7 +17,7 @@ import yamlhelper;
 import core.stdc.time;
 
 
-// tuple that identiefies a workspace
+// tuple that identifies a workspace
 //  background: list of workspaces for admins must also return user
 struct wsID {
 	string user;
@@ -31,6 +31,9 @@ interface Database {
 	// TODO
 	// read entry	
 	DBEntry readEntry(const string filesystem, const string user, const string id, const bool deleted);
+	void createEntry(const string filesystem, const string user, const string id, const string workspace, const long creation, 
+		const long expiration, const long reminder, const int extensions, 
+		const string group, const string mailaddress, const string comment);
 	// write entry
 	// expire entry
 	// ...	
