@@ -15,7 +15,7 @@ import config;
 import dyaml;
 import yamlhelper;
 import core.stdc.time;
-
+static import core.exception;
 
 // tuple that identifies a workspace
 //  background: list of workspaces for admins must also return user
@@ -48,5 +48,13 @@ interface DBEntry {
 	string getId();
 	long getCreation();
 	string getWSPath();
+}
+
+// exception for errors in DB
+class DBException : Exception
+{
+    this(string msg, string file = __FILE__, size_t line = __LINE__) {
+		super(msg, file, line);
+    }
 }
 

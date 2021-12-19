@@ -6,10 +6,11 @@ import std.stdio;
 import std.algorithm : canFind;
 import std.array : array;
 import dyaml;
-import options;
+import options;   // FIXME: this imports depending on compilation context
 import db;
 import dbv1;
 import yamlhelper;
+import core.exception;
 
 
 // config of filesystem, part of global config
@@ -80,7 +81,7 @@ public:
 	// read YAML from node into config class
 	private void readYAML(Node root) {
 		// FIXME: this prevents multiple config files, should not overwrite previous values
-		// this would be ok if this is old style reade only used for first file and addition files	
+		// this would be ok if this is old style reader only used for first file and addition files	
 		// would be read with additional reader
 
 		// global flags
@@ -335,7 +336,7 @@ public:
 	string database(const string filesystem) {
 		// check if filesystem exists
 		if (filesystem in filesystems) {
-			debug{
+			debug(2){
 				stderr.writefln(" debug: [%s] database(%s) = %s", __FUNCTION__, filesystem, filesystems[filesystem].database);
 			}	
 			return filesystems[filesystem].database;
@@ -369,7 +370,12 @@ public:
 
 	// get list of filesystem spaces
 	string[] spaceslist(string filesystem)  {
-		return filesystems[filesystem].spaces;
+		try {
+			return filesystems[filesystem].spaces;
+		}
+		catch(core.exception.RangeError e) {
+			throw new InvalidFilesystemException("fs not in workspace configuration");
+		}
 	}
 
 	// exception for filesystem not in workspace config

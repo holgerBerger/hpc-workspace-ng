@@ -57,7 +57,7 @@ private:
 		//dumper.defaultScalarStyle = ScalarStyle.singleQuoted;
 		dumper.YAMLVersion = null; 	// disable version print in stop of file
 		// dumper.dump( File(filename,"w").lockingTextWriter(), node);
-		debug{
+		debug(2){
 			stderr.writeln(" debug: [",__FUNCTION__,"] writing YAML to file ", filename);
 		}
 		auto of = File(filename,"w");	// we ignore that this can throw, internal routine
@@ -67,17 +67,17 @@ private:
 	}
 
 	// read db entry from yaml file
-	//  return false error, prints error message, true on success
+	//  throw on error
 	//  unittest: yes
-	bool readFromfile(const string id, const string filesystem, const string filename) {
+	void readFromfile(const string id, const string filesystem, const string filename) {
 		Node root;
 		try {
 			root = Loader.fromFile(filename).load();
 		} catch (dyaml.exception.YAMLException e) {
-			debug{
+			debug(2){
 				stderr.writefln(" debug: [%s] yaml parser %s", __FUNCTION__, e.msg);
 			}
-			return false;
+			throw new db.DBException(e.msg);
 		}
 
 		dbversion = readValue!int(root, "dbversion", 0); 	// 0 = legacy
@@ -92,7 +92,6 @@ private:
 		mailaddress = readValue!string(root, "mailaddress", ""); 	
 		comment = readValue!string(root, "comment", ""); 	
 		group = readValue!string(root, "group", ""); 	
-		return true;
 	}
 
 public:
@@ -182,7 +181,7 @@ public:
 			import std.file;
 			import std.path;
 
-			debug {
+			debug(2) {
 				stderr.writefln(" debug: [%s] listdir(%s, %s)", __FUNCTION__, pathname, filepattern);
 			}
 
@@ -236,7 +235,7 @@ public:
 	}
 
 	// read DBentry and return it
-	//  return null on error, entry on success
+	//  throws error from readFromfile on error
 	//  unittest: yes
 	DBEntryV1 readEntry(const string filesystem, const string user, const string id, const bool deleted) {
 		auto entry = new DBEntryV1;
@@ -245,10 +244,8 @@ public:
 			filename = buildPath(config.database(filesystem), config.deletedPath(filesystem), user~"-"~id);
 		else 
 			filename = buildPath(config.database(filesystem), user~"-"~id);
-		if (entry.readFromfile(id, filesystem, filename))
-			return entry;
-		else		
-			return null;
+		entry.readFromfile(id, filesystem, filename);
+		return entry;
 	}
 
 	// create and write a new DB entry
@@ -264,7 +261,7 @@ public:
 		
 		filename = buildPath(config.database(_filesystem), _user ~ "-" ~ _id);
 
-		debug{
+		debug(2){
 			stderr.writeln(" debug: [",__FUNCTION__,"] built path ", filename);
 		}
 
@@ -296,14 +293,11 @@ unittest {
 
 	auto db2 = new DBEntryV1();
 	// should work
-	auto ok = db2.readFromfile("bla", "fs", "/tmp/testfile_ws");
-	assert(ok);
+	assertNotThrown(db2.readFromfile("bla", "fs", "/tmp/testfile_ws"));
 	assert(db2.workspace == "/lalala");
 
-	// bad name
-	// FIXME: supress output of failing tests
-	ok = db2.readFromfile("bla", "fs", "/tmp/testfile_wX");
-	assert(ok==false);
+	// bad name, should throw
+	assertThrown(db2.readFromfile("bla", "fs", "/tmp/testfile_wX"));
 }
 
 unittest {
@@ -316,7 +310,7 @@ unittest {
 	} 
 	catch (std.file.FileException)
 	{
-		// ignore, proably already exists
+		// ignore, probably already exists
 	}
 
 	auto root = Loader.fromString("filesystems:\n" ~
@@ -338,8 +332,5 @@ unittest {
 	assert(entry.extensions == -3);
 	
 	// should fail, invalid user
-	stderr.writeln("error expected... 321");
-	entry = db.readEntry("fs", "user", "Atestws", false);
-	assert(entry is null);
-
+	assertThrown(db.readEntry("fs", "user", "Atestws", false));
 }
