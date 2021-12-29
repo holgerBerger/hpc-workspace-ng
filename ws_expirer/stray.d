@@ -35,25 +35,20 @@ public clean_stray_result clean_stray_directories(Config config, const string fs
             dirs ~= std.file.dirEntries(space, "*-*", SpanMode.shallow).filter!(a => a.isDir).map!(a => a.name).array;
             // NOTE: *-* for compatibility with old expirer
     }
-    debug(2){
-        stderr.writeln(" debug: [",__FUNCTION__,"] dirs: ",dirs);
-    }
-
 
     // get all workspace pathes from DB
     auto db = config.openDB();
     auto wsIDs = db.matchPattern("*", fs, "*", null, false, false );
-    debug(2){
-        stderr.writeln(" debug: [",__FUNCTION__,"] wsIDs: ", wsIDs);
-    }
     string[] workspacesInDB;
     workspacesInDB.reserve(wsIDs.length);
     foreach(wsID wsid; wsIDs) {
         // this can throw in cases of bad config
         workspacesInDB ~= db.readEntry(fs, wsid.user, wsid.id, false).getWSPath();
-         
     }
+
     debug(2){
+        stderr.writeln(" debug: [",__FUNCTION__,"] dirs: ",dirs);
+        stderr.writeln(" debug: [",__FUNCTION__,"] wsIDs: ", wsIDs);
         stderr.writeln(" debug: [",__FUNCTION__,"] workspacesInDB: ", workspacesInDB);
     }
 
@@ -70,6 +65,7 @@ public clean_stray_result clean_stray_directories(Config config, const string fs
 
     if(!silent) {
         stdout.writefln("%d valid, %d invalid directories found.", result.valid_ws, result.invalid_ws);
+        
         stdout.writeln("deleted workspaces second...");
     }
 
@@ -79,20 +75,16 @@ public clean_stray_result clean_stray_directories(Config config, const string fs
             dirs ~= std.file.dirEntries(buildPath(space,config.deletedPath(fs)), "*-*", SpanMode.shallow).filter!(a => a.isDir).map!(a => a.name).array;
             // NOTE: *-* for compatibility with old expirer
     }
-    debug(2){
-        stderr.writeln(" debug: [",__FUNCTION__,"] dirs: ",dirs);
-    }
 
     // get all workspace names from DB, this contains the timestamp
     wsIDs = db.matchPattern("*", fs, "*", null, true, false );
-    debug(2){
-        stderr.writeln(" debug: [",__FUNCTION__,"] wsIDs: ", wsIDs);
-    }
     workspacesInDB.length=0;
     foreach(wsID wsid; wsIDs) {
         workspacesInDB ~= (wsid.user ~ "-" ~ wsid.id);
     }
     debug(2){
+        stderr.writeln(" debug: [",__FUNCTION__,"] dirs: ",dirs);
+        stderr.writeln(" debug: [",__FUNCTION__,"] wsIDs: ", wsIDs);
         stderr.writeln(" debug: [",__FUNCTION__,"] workspacesInDB: ", workspacesInDB);
     }
 
