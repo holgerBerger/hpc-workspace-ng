@@ -83,7 +83,7 @@ private:
 		dbversion = readValue!int(root, "dbversion", 0); 	// 0 = legacy
 		this.id = id;
 		this.filesystem = filesystem;
-		creation = readValue!long(root, "creation", 0); 	
+		creation = readValue!long(root, "creation", 0); 	// FIXME: c++ tool does not write this field, but takes from stat
 		released = readValue!long(root, "released", 0); 	
 		expiration = readValue!long(root, "expiration", 0); 	
 		reminder = readValue!long(root, "reminder", 0); 	
