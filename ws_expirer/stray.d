@@ -6,7 +6,7 @@ import std.array;
 import db;
 import config;
 
-public struct clean_stray_result {
+public struct Clean_stray_result {
     long valid_ws;
     long invalid_ws;
     long valid_deleted;
@@ -17,9 +17,9 @@ public struct clean_stray_result {
 //  finds directories that are not in DB and removes them,
 //  returns numbers of valid and invalid directories
 //  silent==true to avoid output for unit tests
-public clean_stray_result clean_stray_directories(Config config, const string fs, const bool dryrun, const bool silent) {
+public Clean_stray_result clean_stray_directories(Config config, in string fs, in bool dryrun, in bool silent) {
     
-    clean_stray_result result = {0, 0, 0, 0};
+    Clean_stray_result result = {0, 0, 0, 0};
 
     string[] spaces = config.spaceslist(fs);
     string[] dirs;      // list of all directories in all spaces of 'fs'
@@ -41,12 +41,12 @@ public clean_stray_result clean_stray_directories(Config config, const string fs
     auto wsIDs = db.matchPattern("*", fs, "*", null, false, false );
     string[] workspacesInDB;
     workspacesInDB.reserve(wsIDs.length);
-    foreach(wsID wsid; wsIDs) {
+    foreach(WsId wsid; wsIDs) {
         // this can throw in cases of bad config
         workspacesInDB ~= db.readEntry(fs, wsid.user, wsid.id, false).getWSPath();
     }
 
-    debug(2){
+    debug(l2){
         stderr.writeln(" debug: [",__FUNCTION__,"] dirs: ",dirs);
         stderr.writeln(" debug: [",__FUNCTION__,"] wsIDs: ", wsIDs);
         stderr.writeln(" debug: [",__FUNCTION__,"] workspacesInDB: ", workspacesInDB);
@@ -72,17 +72,18 @@ public clean_stray_result clean_stray_directories(Config config, const string fs
     dirs.length=0;
     // directory entries first
     foreach(string space; spaces) {
-            dirs ~= std.file.dirEntries(buildPath(space,config.deletedPath(fs)), "*-*", SpanMode.shallow).filter!(a => a.isDir).map!(a => a.name).array;
+            dirs ~= std.file.dirEntries(buildPath(space,config.deletedPath(fs)), "*-*", 
+                        SpanMode.shallow).filter!(a => a.isDir).map!(a => a.name).array;
             // NOTE: *-* for compatibility with old expirer
     }
 
     // get all workspace names from DB, this contains the timestamp
     wsIDs = db.matchPattern("*", fs, "*", null, true, false );
     workspacesInDB.length=0;
-    foreach(wsID wsid; wsIDs) {
+    foreach(WsId wsid; wsIDs) {
         workspacesInDB ~= (wsid.user ~ "-" ~ wsid.id);
     }
-    debug(2){
+    debug(l2){
         stderr.writeln(" debug: [",__FUNCTION__,"] dirs: ",dirs);
         stderr.writeln(" debug: [",__FUNCTION__,"] wsIDs: ", wsIDs);
         stderr.writeln(" debug: [",__FUNCTION__,"] workspacesInDB: ", workspacesInDB);
@@ -133,7 +134,7 @@ unittest{
                     "    spaces: [/tmp/strayws]\n").load();
 	auto config = new Config(root, new Options( ["" /*,"--debug"*/ ] ));
 
-    clean_stray_result result;
+    Clean_stray_result result;
     assertThrown(clean_stray_directories(config, "wrongfs", true, true));
     assertNotThrown(result=clean_stray_directories(config, "fs", true, true));
     assert(result.invalid_ws==1);

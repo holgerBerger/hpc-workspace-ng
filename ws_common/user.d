@@ -15,7 +15,7 @@ string getUsername() {
 }
 /*
 string getUsername() {
-	// FIXME this gives wrong user in case of su -
+	// FIXME: this gives wrong user in case of su -
 	return getlogin().to!string;
 }
 */

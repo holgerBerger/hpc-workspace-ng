@@ -38,9 +38,9 @@ private:
 	string 	comment;		// some user defined comment
 
 	//  create new entry in <filename>, to be called from database or tests, not for clients
-	void createEntryFile(const string filename, const string _filesystem, const string _user, const string _id, const string _workspace, const long _creation, 
-		const long _expiration, const long _reminder, const int _extensions, 
-		const string _group, const string _mailaddress, const string _comment) {
+	void createEntryFile(in string filename, in string _filesystem, in string _user, in string _id, in string _workspace, 
+		in long _creation, in long _expiration, in long _reminder, in int _extensions, 
+		in string _group, in string _mailaddress, in string _comment) {
 
 		auto a1 = ["workspace": _workspace, "group": _group, "mailaddress": _mailaddress, "comment": _comment];
 
@@ -57,7 +57,7 @@ private:
 		//dumper.defaultScalarStyle = ScalarStyle.singleQuoted;
 		dumper.YAMLVersion = null; 	// disable version print in stop of file
 		// dumper.dump( File(filename,"w").lockingTextWriter(), node);
-		debug(2){
+		debug(l2){
 			stderr.writeln(" debug: [",__FUNCTION__,"] writing YAML to file ", filename);
 		}
 		auto of = File(filename,"w");	// we ignore that this can throw, internal routine
@@ -74,7 +74,7 @@ private:
 		try {
 			root = Loader.fromFile(filename).load();
 		} catch (dyaml.exception.YAMLException e) {
-			debug(2){
+			debug(l2){
 				stderr.writefln(" debug: [%s] yaml parser %s", __FUNCTION__, e.msg);
 			}
 			throw new db.DBException(e.msg);
@@ -155,7 +155,8 @@ public:
 	//  does not check if request for "deleted" is valid, has to be done on caller side
 	//  throws IO exceptions in case of access problems
 	//  unittest: no
-	wsID[] matchPattern(const string pattern, const string filesystem, const string user, const string[] groups, const bool deleted, const bool groupworkspaces) {
+	WsId[] matchPattern(const string pattern, const string filesystem, const string user, const string[] groups, 
+						const bool deleted, const bool groupworkspaces) {
 		string filepattern;
 
 		/* FIXME: dead code? remove?
@@ -181,7 +182,7 @@ public:
 			import std.file;
 			import std.path;
 
-			debug(2) {
+			debug(l2) {
 				stderr.writefln(" debug: [%s] listdir(%s, %s)", __FUNCTION__, pathname, filepattern);
 			}
 
@@ -219,9 +220,9 @@ public:
 			filepattern = user ~ "-" ~ pattern;
 		
 		// helper to extract from filename the user-id part (assuming more is attached)
-		wsID extractID(string fn) {
+		WsId extractID(string fn) {
 			auto pos=fn.indexOf('-');
-			return wsID(fn[0..pos],fn[pos+1..$]);
+			return WsId(fn[0..pos],fn[pos+1..$]);
 		}
 		
 		// scan filesystem
@@ -252,16 +253,16 @@ public:
 	//  throws after printing error message in case of IO errors
 	//  unittest: yes
 	// FIXME: is createFile the right name for public interface? writeentry?
-	void createEntry(const string _filesystem, const string _user, const string _id, const string _workspace, const long _creation, 
-		const long _expiration, const long _reminder, const int _extensions, 
-		const string _group, const string _mailaddress, const string _comment) {
+	void createEntry(in string _filesystem, in string _user, in string _id, in string _workspace, in long _creation, 
+		in long _expiration, in long _reminder, in int _extensions, 
+		in string _group, in string _mailaddress, in string _comment) {
 		
 		auto db = new DBEntryV1(); 
 		string filename;
 		
 		filename = buildPath(config.database(_filesystem), _user ~ "-" ~ _id);
 
-		debug(2){
+		debug(l2){
 			stderr.writeln(" debug: [",__FUNCTION__,"] built path ", filename);
 		}
 

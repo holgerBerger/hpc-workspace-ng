@@ -110,7 +110,7 @@ public:
 				try {
 					cnode = root["filesystems"][fs.get!string];
 				} 
-				catch(Throwable) {
+				catch(dyaml.node.NodeException /*or Throwable */) {
 					cnode = root["workspaces"][fs.get!string];
 				}
 				// read current workspace
@@ -336,7 +336,7 @@ public:
 	string database(const string filesystem) {
 		// check if filesystem exists
 		if (filesystem in filesystems) {
-			debug(2){
+			debug(l2){
 				stderr.writefln(" debug: [%s] database(%s) = %s", __FUNCTION__, filesystem, filesystems[filesystem].database);
 			}	
 			return filesystems[filesystem].database;

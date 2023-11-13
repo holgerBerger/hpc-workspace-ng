@@ -6,7 +6,7 @@
  *  D version of workspace utility
  *  a workspace is a temporary directory created in behalf of a user with a limited lifetime.
  *
- *  (c) Holger Berger 2021
+ *  (c) Holger Berger 2021,2023
  * 
  *  workspace-ng is based on workspace by Holger Berger, Thomas Beisel and Martin Hecht
  *

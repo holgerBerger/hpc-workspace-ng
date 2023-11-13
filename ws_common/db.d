@@ -19,7 +19,7 @@ static import core.exception;
 
 // tuple that identifies a workspace
 //  background: list of workspaces for admins must also return user
-struct wsID {
+struct WsId {
 	string user;
 	string id;
 }
@@ -27,13 +27,14 @@ struct wsID {
 // interface to access the database
 interface Database {
 	// return list of entries 
-	wsID[] matchPattern(const string pattern, const string filesystem, const string user, const string[] groups, const bool deleted, const bool groupworkspaces);
+	WsId[] matchPattern(const string pattern, const string filesystem, const string user, const string[] groups, 
+																const bool deleted, const bool groupworkspaces);
 	// TODO
 	// read entry	
-	DBEntry readEntry(const string filesystem, const string user, const string id, const bool deleted);
-	void createEntry(const string filesystem, const string user, const string id, const string workspace, const long creation, 
-		const long expiration, const long reminder, const int extensions, 
-		const string group, const string mailaddress, const string comment);
+	DBEntry readEntry(in string filesystem, in string user, in string id, in bool deleted);
+	void createEntry(in string filesystem, in string user, in string id, in string workspace, in long creation, 
+		in long expiration, in long reminder, in int extensions, 
+		in string group, in string mailaddress, in string comment);
 	// write entry
 	// expire entry
 	// ...	
