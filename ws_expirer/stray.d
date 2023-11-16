@@ -21,18 +21,29 @@ public Clean_stray_result clean_stray_directories(Config config, in string fs, i
     
     Clean_stray_result result = {0, 0, 0, 0};
 
+    // helper to store space and found dir together
+    struct dirT {
+        string space;
+        string dir;
+        this(string a, string b) {space=a; dir=b;}
+    }
+
     string[] spaces = config.spaceslist(fs);
-    string[] dirs;      // list of all directories in all spaces of 'fs'
+    dirT[] dirs;      // list of all directories in all spaces of 'fs'
+
+    //////// stray directories /////////
+    // move directories not having a DB entry to deleted 
 
     if(!silent) {
-        stdout.writeln("PHASE: stray directory removel for ", fs);
-        stdout.writeln("workspaces first...");
+        stdout.writeln("Stray directory removal for ", fs);
+        stdout.writeln(" workspaces first...");
     }
 
     // find directories first, check DB entries later, to prevent data race with workspaces
     // getting created while this is running
     foreach(string space; spaces) {
-            dirs ~= std.file.dirEntries(space, "*-*", SpanMode.shallow).filter!(a => a.isDir).map!(a => a.name).array;
+            dirs ~= std.file.dirEntries(space, "*-*", SpanMode.shallow).filter!(a => a.isDir).
+                    map!(a => dirT(space, a.name)).array;
             // NOTE: *-* for compatibility with old expirer
     }
 
@@ -42,7 +53,7 @@ public Clean_stray_result clean_stray_directories(Config config, in string fs, i
     string[] workspacesInDB;
     workspacesInDB.reserve(wsIDs.length);
     foreach(WsId wsid; wsIDs) {
-        // this can throw in cases of bad config
+        // FIXME: this can throw in cases of bad config
         workspacesInDB ~= db.readEntry(fs, wsid.user, wsid.id, false).getWSPath();
     }
 
@@ -53,10 +64,22 @@ public Clean_stray_result clean_stray_directories(Config config, in string fs, i
     }
 
     // compare filesystem with DB
-    foreach(string dir; dirs) {
-        if(!canFind(workspacesInDB, dir)) {
-            if(!silent) stdout.writeln("  stray workspace ", dir);
-            // TODO: move to deleted
+    foreach(founddir; dirs) {
+        if(!canFind(workspacesInDB, founddir.dir)) {
+            if(!silent) stdout.writeln("  stray workspace ", founddir.dir);
+
+            if (!dryrun) {
+                try {
+                    stderr.writeln("   move ",founddir.dir, " to ", buildPath(founddir.space, config.deletedPath(fs)));
+                    std.file.rename( founddir.dir, buildPath(founddir.space, config.deletedPath(fs)));
+                } 
+                catch (FileException e) {
+                    stderr.writeln("   failed to move to deleted: ", founddir.dir, " (",e.msg, ")");
+                }
+            } else {
+                stderr.writeln("   would move ",founddir.dir, " to ", 
+                                buildPath(founddir.space, config.deletedPath(fs)));
+            }
             result.invalid_ws++;
         } else {
             result.valid_ws++;
@@ -64,16 +87,19 @@ public Clean_stray_result clean_stray_directories(Config config, in string fs, i
     }
 
     if(!silent) {
-        stdout.writefln("%d valid, %d invalid directories found.", result.valid_ws, result.invalid_ws);
+        stdout.writefln(" %d valid, %d invalid directories found.", result.valid_ws, result.invalid_ws);
         
-        stdout.writeln("deleted workspaces second...");
+        stdout.writeln(" deleted workspaces second...");
     }
+
+    ///// deleted workspaces /////
+    // delete workspaces that no longer have any DB entry
 
     dirs.length=0;
     // directory entries first
     foreach(string space; spaces) {
-            dirs ~= std.file.dirEntries(buildPath(space,config.deletedPath(fs)), "*-*", 
-                        SpanMode.shallow).filter!(a => a.isDir).map!(a => a.name).array;
+            dirs ~= std.file.dirEntries(buildPath(space,config.deletedPath(fs)), "*-*", SpanMode.shallow).
+                filter!(a => a.isDir).map!(a => dirT(space, a.name)).array;
             // NOTE: *-* for compatibility with old expirer
     }
 
@@ -90,17 +116,28 @@ public Clean_stray_result clean_stray_directories(Config config, in string fs, i
     }
 
     // compare filesystem with DB
-    foreach(string dir; dirs) {
-        if(!canFind(workspacesInDB, baseName(dir))) {
-            if(!silent) stdout.writeln("  stray workspace ", dir);
-            // TODO: move to deleted
+    foreach(founddir; dirs) {
+        if(!canFind(workspacesInDB, baseName(founddir.dir))) {
+            if(!silent) stdout.writeln("  stray workspace ", founddir.dir);
+            if (!dryrun) {
+                try {
+                    // FIXME: is that safe against symlink attacks?
+                    std.file.rmdirRecurse(buildPath(founddir.space, config.deletedPath(fs)));
+                    stderr.writeln("   remove ", founddir.dir);
+                } 
+                catch (FileException e) {
+                    stderr.writeln("   failed to remove: ", founddir.dir, " (",e.msg,")");
+                }
+            } else {
+                stderr.writeln("   would remove ", founddir.dir);
+            }
             result.invalid_deleted++;
         } else {
             result.valid_deleted++;
         }
     }
     if(!silent) {
-        stdout.writefln("%d valid, %d invalid directories found.", result.valid_deleted, result.invalid_deleted);
+        stdout.writefln(" %d valid, %d invalid directories found.", result.valid_deleted, result.invalid_deleted);
     }
 
     return result;
