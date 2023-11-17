@@ -42,12 +42,15 @@
 import std.getopt;
 import std.stdio;
 import std.conv;
+import std.algorithm : filter, canFind;
+import std.array;
 import options;
 import config;
 import user;
 import db;
 import exit;
 import stray;
+import expire;
 
 Options opts;
 string[] fslist;
@@ -90,24 +93,34 @@ int main(string[] args)
 	auto config = new Config(configfile, opts);
 
     if(opts.filesystems.length>0) {
-        fslist = opts.filesystems;
-        // FIXME: verify that fs exists in config
+        // filter out unknown filesystems from commandline
+        fslist = filter!(a => canFind(config.filesystemlist, a))(opts.filesystems).array;
     } else {
         fslist = config.filesystemlist;
     }
 
-    debug{
+    debug(l2){
         stderr.writeln(" debug: [",__FUNCTION__,"] fslist: ",fslist);
     }
 
     if(opts.dryrun) {
         stdout.writeln("simulate cleaning - dryrun");
     } else {
-        stdout.writeln("really cleanin...");
+        stdout.writeln("really cleaning!");
     }
 
+    // go through filesystem and
+    // stray first, move workspaces without DB entries and
+    // delete deleted ones not in DB
     foreach(string fs; fslist) {
         clean_stray_directories(config, fs, opts.dryrun, false);
+    }
+
+    // go through database and
+    // expire workspaces beyond expiration age and
+    // delete expired ones which are beyond keep date
+    foreach(string fs; fslist) {
+        expire_workspaces(config, fs, opts.dryrun, false);
     }
 
     return 0;

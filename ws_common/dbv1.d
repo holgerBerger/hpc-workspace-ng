@@ -69,7 +69,7 @@ private:
 	// read db entry from yaml file
 	//  throw on error
 	//  unittest: yes
-	void readFromfile(const string id, const string filesystem, const string filename) {
+	void readFromfile(const WsId id, const string filesystem, const string filename) {
 		Node root;
 		try {
 			root = Loader.fromFile(filename).load();
@@ -95,20 +95,34 @@ private:
 	}
 
 public:
+
 	// getters for sorting
 	long getRemaining() {
 		long remaining = expiration - time(cast(long *)0L);
 		return remaining;
 	}
+
 	long getCreation() {
 		return creation;
 	}
+
 	string getId() {
 		return id;
 	}
+
 	string getWSPath() {
 		return workspace;
 	}
+
+	long getExpiration() {
+		return expiration;
+	}
+
+	long getReleasetime() {
+		// if this is set, workspace was released by user, not expirer
+		return released;
+	}
+
 
 	// print entry to stdout, for ws_list
 	void print(const bool verbose, const bool terse) {
@@ -219,32 +233,34 @@ public:
 		else
 			filepattern = user ~ "-" ~ pattern;
 		
+		/*
 		// helper to extract from filename the user-id part (assuming more is attached)
 		WsId extractID(string fn) {
 			auto pos=fn.indexOf('-');
 			return WsId(fn[0..pos],fn[pos+1..$]);
 		}
+		*/
 		
 		// scan filesystem
 		if (deleted) 
-			return listdir(buildPath(config.database(filesystem),config.deletedPath(filesystem)), filepattern).
-				map!(extractID).array;
+			return listdir(buildPath(config.database(filesystem),config.deletedPath(filesystem)), filepattern).array;
+				// map!(extractID).array;
 		else 
-			return listdir(config.database(filesystem), filepattern).
-				map!(extractID).array;
+			return listdir(config.database(filesystem), filepattern).array;
+				// map!(extractID).array;
 
 	}
 
 	// read DBentry and return it
 	//  throws error from readFromfile on error
 	//  unittest: yes
-	DBEntryV1 readEntry(const string filesystem, const string user, const string id, const bool deleted) {
+	DBEntryV1 readEntry(const string filesystem, const WsId id, const bool deleted) {
 		auto entry = new DBEntryV1;
 		string filename;
 		if (deleted) 
-			filename = buildPath(config.database(filesystem), config.deletedPath(filesystem), user~"-"~id);
+			filename = buildPath(config.database(filesystem), config.deletedPath(filesystem), id);
 		else 
-			filename = buildPath(config.database(filesystem), user~"-"~id);
+			filename = buildPath(config.database(filesystem), id);
 		entry.readFromfile(id, filesystem, filename);
 		return entry;
 	}
@@ -278,6 +294,22 @@ public:
 			stderr.writeln("error: could not create DB entry (", e.msg,")");
 			throw e;
 		}
+	}
+
+	// expire DB entry by moving it to removed location
+	bool expireEntry(in string filesystem, in WsId id, in string timestamp) {
+		auto filename = buildPath(config.database(filesystem), id);
+		auto deletedname = buildPath(config.database(filesystem), config.deletedPath(filesystem), id ~ "-" ~ timestamp);
+		try {
+			debug{
+				stderr.writeln("   mv ", filename, " -> ", deletedname);
+			}
+			std.file.rename(filename, deletedname);
+		} catch (FileException e) {
+            stderr.writeln("   ERROR, failed to expire DB entry: ", filesystem,":", id, " (",e.msg, ")");
+			return false;
+        }
+		return true;
 	}
 }
 
@@ -328,10 +360,10 @@ unittest {
 
 	DBEntryV1 entry;
 	// should work
-	assertNotThrown(entry = db.readEntry("fs", "usera", "Atestws", false));
+	assertNotThrown(entry = db.readEntry("fs", "usera-Atestws", false));
 	assert(entry !is null);
 	assert(entry.extensions == -3);
 	
 	// should fail, invalid user
-	assertThrown(db.readEntry("fs", "user", "Atestws", false));
+	assertThrown(db.readEntry("fs", "user-Atestws", false));
 }

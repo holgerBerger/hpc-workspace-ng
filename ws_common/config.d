@@ -360,6 +360,7 @@ public:
 	// get DB matching the DB type of the config
 	Database openDB() {
 		// FIXME: check database string for file:// pattern, if no : assume file
+		// FIXME: should this have (fs) argument, and each fs be ablte o have its own DB format?
 		return new FilesystemDBV1(this);
 	}
 
@@ -369,7 +370,7 @@ public:
 	}
 
 	// get list of filesystem spaces
-	string[] spaceslist(string filesystem)  {
+	 string[] spaceslist(in string filesystem)  {
 		try {
 			return filesystems[filesystem].spaces;
 		}

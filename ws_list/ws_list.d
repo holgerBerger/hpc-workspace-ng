@@ -134,7 +134,7 @@ int main(string[] args)
 			try {
 				foreach(id; db.matchPattern(pattern, fs, userpattern, grouplist, opts.listexpired, opts.listgroups)) {
 					if (!opts.shortlisting) {
-						auto entry = db.readEntry(fs, id.user, id.id, opts.listexpired);
+						auto entry = db.readEntry(fs, id, opts.listexpired);
 						// if entry is valid
 						if (entry) {
 							// if no sorting, print, otherwise append to list
@@ -145,7 +145,7 @@ int main(string[] args)
 							}
 						}
 					} else {
-						stdout.writeln(id.id);
+						stdout.writeln(id);
 					}
 				}
 			} 

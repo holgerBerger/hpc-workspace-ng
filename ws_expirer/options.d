@@ -12,7 +12,7 @@ class Options {
 	bool cleaner;
     bool dryrun=false;
     bool verbose;
-    bool syslog;
+    bool syslog;	// TODO: needs implementation
 	bool debugflag;
 
 
@@ -23,7 +23,7 @@ class Options {
 		auto help = getopt(
 			args,
 			std.getopt.config.bundling, std.getopt.config.caseSensitive,
-			"filesystem|F", "filesystem to list workspaces from (comma separated list)", &filesystems,
+			"filesystem|F", "filesystems to clean workspaces from (comma separated list)", &filesystems,
             "configfile", "configuration file (default: /etc/ws.conf", &configfile, 
             "cleaner", "enable cleaner, default is dry-run", &cleaner,
             "dryrun|dry-run", "dryrun,do nothing (default)", &dryrun,

@@ -17,26 +17,22 @@ import yamlhelper;
 import core.stdc.time;
 static import core.exception;
 
-// tuple that identifies a workspace
-//  background: list of workspaces for admins must also return user
-struct WsId {
-	string user;
-	string id;
-}
+// identifier for a workspace
+alias WsId = string;
 
 // interface to access the database
 interface Database {
 	// return list of entries 
 	WsId[] matchPattern(const string pattern, const string filesystem, const string user, const string[] groups, 
 																const bool deleted, const bool groupworkspaces);
-	// TODO
-	// read entry	
-	DBEntry readEntry(in string filesystem, in string user, in string id, in bool deleted);
+	
+	DBEntry readEntry(in string filesystem, in WsId id, in bool deleted);
 	void createEntry(in string filesystem, in string user, in string id, in string workspace, in long creation, 
 		in long expiration, in long reminder, in int extensions, 
 		in string group, in string mailaddress, in string comment);
 	// write entry
 	// expire entry
+	bool expireEntry(in string filesystem, in WsId id, in string timestamp);
 	// ...	
 }
 
@@ -49,6 +45,8 @@ interface DBEntry {
 	string getId();
 	long getCreation();
 	string getWSPath();
+	long getExpiration();
+	long getReleasetime();
 }
 
 // exception for errors in DB

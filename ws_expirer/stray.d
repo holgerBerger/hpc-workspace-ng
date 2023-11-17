@@ -3,6 +3,7 @@ import std.file;
 import std.path : buildPath, baseName;
 import std.algorithm : filter, canFind, map;
 import std.array;
+
 import db;
 import config;
 
@@ -54,7 +55,7 @@ public Clean_stray_result clean_stray_directories(Config config, in string fs, i
     workspacesInDB.reserve(wsIDs.length);
     foreach(WsId wsid; wsIDs) {
         // FIXME: this can throw in cases of bad config
-        workspacesInDB ~= db.readEntry(fs, wsid.user, wsid.id, false).getWSPath();
+        workspacesInDB ~= db.readEntry(fs, wsid, false).getWSPath();
     }
 
     debug(l2){
@@ -93,7 +94,7 @@ public Clean_stray_result clean_stray_directories(Config config, in string fs, i
     }
 
     ///// deleted workspaces /////
-    // delete workspaces that no longer have any DB entry
+    // delete deleted workspaces that no longer have any DB entry
 
     dirs.length=0;
     // directory entries first
@@ -107,7 +108,7 @@ public Clean_stray_result clean_stray_directories(Config config, in string fs, i
     wsIDs = db.matchPattern("*", fs, "*", null, true, false );
     workspacesInDB.length=0;
     foreach(WsId wsid; wsIDs) {
-        workspacesInDB ~= (wsid.user ~ "-" ~ wsid.id);
+        workspacesInDB ~= (wsid);
     }
     debug(l2){
         stderr.writeln(" debug: [",__FUNCTION__,"] dirs: ",dirs);
@@ -122,6 +123,7 @@ public Clean_stray_result clean_stray_directories(Config config, in string fs, i
             if (!dryrun) {
                 try {
                     // FIXME: is that safe against symlink attacks?
+                    // TODO: add timeout
                     std.file.rmdirRecurse(buildPath(founddir.space, config.deletedPath(fs)));
                     stderr.writeln("   remove ", founddir.dir);
                 } 
