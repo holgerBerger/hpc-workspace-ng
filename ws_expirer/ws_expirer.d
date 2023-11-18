@@ -29,7 +29,7 @@
   *  - introduce DB abstraction
   *  - delete fast and secure with low number of systemcalls
   *  - lower number of stat()/lstat() calls 
-  *  - introduce statistics what gets deleted
+  *  - introduce statistics what gets deleted TODO:
   *  - remove problems with python2/3 migration and python dependencies (yaml reader)
   *  - rethink flows/make it easier to reason about
   *  
@@ -113,14 +113,14 @@ int main(string[] args)
     // stray first, move workspaces without DB entries and
     // delete deleted ones not in DB
     foreach(string fs; fslist) {
-        clean_stray_directories(config, fs, opts.dryrun, false);
+        clean_stray_directories(config, fs, opts.dryrun);
     }
 
     // go through database and
     // expire workspaces beyond expiration age and
     // delete expired ones which are beyond keep date
     foreach(string fs; fslist) {
-        expire_workspaces(config, fs, opts.dryrun, false);
+        expire_workspaces(config, fs, opts.dryrun);
     }
 
     return 0;

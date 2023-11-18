@@ -17,8 +17,7 @@ public struct Clean_stray_result {
 // clean_stray_directtories
 //  finds directories that are not in DB and removes them,
 //  returns numbers of valid and invalid directories
-//  silent==true to avoid output for unit tests
-public Clean_stray_result clean_stray_directories(Config config, in string fs, in bool dryrun, in bool silent) {
+public Clean_stray_result clean_stray_directories(Config config, in string fs, in bool dryrun) {
     
     Clean_stray_result result = {0, 0, 0, 0};
 
@@ -35,10 +34,8 @@ public Clean_stray_result clean_stray_directories(Config config, in string fs, i
     //////// stray directories /////////
     // move directories not having a DB entry to deleted 
 
-    if(!silent) {
-        stdout.writeln("Stray directory removal for ", fs);
-        stdout.writeln(" workspaces first...");
-    }
+    stdout.writeln("Stray directory removal for ", fs);
+    stdout.writeln(" workspaces first...");
 
     // find directories first, check DB entries later, to prevent data race with workspaces
     // getting created while this is running
@@ -67,7 +64,7 @@ public Clean_stray_result clean_stray_directories(Config config, in string fs, i
     // compare filesystem with DB
     foreach(founddir; dirs) {
         if(!canFind(workspacesInDB, founddir.dir)) {
-            if(!silent) stdout.writeln("  stray workspace ", founddir.dir);
+            stdout.writeln("  stray workspace ", founddir.dir);
 
             if (!dryrun) {
                 try {
@@ -87,15 +84,12 @@ public Clean_stray_result clean_stray_directories(Config config, in string fs, i
         }
     }
 
-    if(!silent) {
-        stdout.writefln(" %d valid, %d invalid directories found.", result.valid_ws, result.invalid_ws);
+    stdout.writefln("  %d valid, %d invalid directories found.", result.valid_ws, result.invalid_ws);
         
-        stdout.writeln(" deleted workspaces second...");
-    }
-
+    stdout.writeln(" deleted workspaces second...");
+    
     ///// deleted workspaces /////
     // delete deleted workspaces that no longer have any DB entry
-
     dirs.length=0;
     // directory entries first
     foreach(string space; spaces) {
@@ -119,7 +113,7 @@ public Clean_stray_result clean_stray_directories(Config config, in string fs, i
     // compare filesystem with DB
     foreach(founddir; dirs) {
         if(!canFind(workspacesInDB, baseName(founddir.dir))) {
-            if(!silent) stdout.writeln("  stray workspace ", founddir.dir);
+            stdout.writeln("  stray workspace ", founddir.dir);
             if (!dryrun) {
                 try {
                     // FIXME: is that safe against symlink attacks?
@@ -138,9 +132,8 @@ public Clean_stray_result clean_stray_directories(Config config, in string fs, i
             result.valid_deleted++;
         }
     }
-    if(!silent) {
-        stdout.writefln(" %d valid, %d invalid directories found.", result.valid_deleted, result.invalid_deleted);
-    }
+    
+    stdout.writefln("  %d valid, %d invalid directories found.", result.valid_deleted, result.invalid_deleted);
 
     return result;
 
@@ -174,7 +167,7 @@ unittest{
 	auto config = new Config(root, new Options( ["" /*,"--debug"*/ ] ), false);
 
     Clean_stray_result result;
-    assertThrown(clean_stray_directories(config, "wrongfs", true, true));
-    assertNotThrown(result=clean_stray_directories(config, "fs", true, true));
+    assertThrown(clean_stray_directories(config, "wrongfs", true));
+    assertNotThrown(result=clean_stray_directories(config, "fs", true));
     assert(result.invalid_ws==1);
 }

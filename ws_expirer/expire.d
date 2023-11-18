@@ -12,15 +12,15 @@ import db;
 import dbv1;
 
 
-// expire workspaces expires workspace DB entries and moves the workspace to deleted directory
+// expire workspace DB entries and moves the workspace to deleted directory
 // deletes expired workspace in second phase
-public void expire_workspaces(Config config, in string fs, in bool dryrun, in bool silent) {
+public void expire_workspaces(Config config, in string fs, in bool dryrun) {
     
     string[] spaces = config.spaceslist(fs);
 
     auto db = config.openDB();
 
-    if(!silent) stdout.writeln("Checking DB for workspaces to be expired for ", fs);
+    stdout.writeln("Checking DB for workspaces to be expired for ", fs);
 
     // search expired active workspaces in DB
     foreach(id; db.matchPattern("*", fs, "*", [], false, false)) {
@@ -64,7 +64,7 @@ public void expire_workspaces(Config config, in string fs, in bool dryrun, in bo
         }
     }
 
-    if(!silent) stdout.writeln("Checking deleted DB for workspaces to be deleted for ", fs);
+    stdout.writeln("Checking deleted DB for workspaces to be deleted for ", fs);
 
     // search in DB for expired/released workspaces for those over keeptime
     foreach(id; db.matchPattern("*", fs, "*", [], true, false)) {
@@ -89,14 +89,13 @@ public void expire_workspaces(Config config, in string fs, in bool dryrun, in bo
         }
 
         auto released = dbentry.getReleasetime; // check if it was released by user
-        if (released > 1_000_000_000) { // released after 2001?
+        if (released > 1_000_000_000) { // released after 2001? if not ignore it
             releasetime = released;
         } else {
             releasetime = 3_000_000_000;    // date in future, 2065
             stderr.writeln("  IGNORING released ",releasetime, " for ", id);
         }
 
-        bool releasedbyuser = false;
         if (  (time(cast(long *)0L) > (expiration + keeptime*24*3600)) 
                         || (time(cast(long *)0L) > releasetime + 3600)  ) {
             if (time(cast(long *)0L) > releasetime + 3600) {
