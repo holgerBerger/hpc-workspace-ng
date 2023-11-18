@@ -13,6 +13,7 @@ T readValue(T)(Node root, string key, T defaultvalue) {
 		return defaultvalue;
 }
 
+@("readValue")
 unittest {
 	auto root = Loader.fromString("key: value\nintkey: -1\nverbose: true").load();
 	// testing string value
@@ -39,6 +40,7 @@ T[] readArray(T)(Node root, string key) {
 	return array;
 }
 
+@("readarray")
 unittest {
 	auto root = Loader.fromString("ilist: [1,2,3]\nlist: [a,b,c]").load();
 	// testing string value

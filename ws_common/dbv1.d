@@ -330,7 +330,7 @@ public:
 	}
 }
 
-
+@("readfromfile")
 unittest {		
 	// test internal interface
 
@@ -349,10 +349,14 @@ unittest {
 	assertThrown(db2.readFromfile("bla", "fs", "/tmp/testfile_wX"));
 }
 
+@("createEntry")
 unittest {
 	// test external interface
-
+	import silence;
 	import options;
+
+	auto fd1=SilenceFD(1);
+	auto fd2=SilenceFD(2);
 
 	try {
 		std.file.mkdirRecurse("/tmp/wsdb/.removed");

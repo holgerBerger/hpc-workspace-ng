@@ -48,6 +48,7 @@ class Options {
 
 }
 
+@("options")
 unittest {
 	// first arg is program name
 	auto opttest = new Options(["unittest", "-v", "--filesystem","test1,test2"]);

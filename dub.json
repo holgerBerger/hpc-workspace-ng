@@ -1,44 +1,69 @@
 {
-        "authors": [
-                "Holger Berger"
-        ],
-        "copyright": "Copyright © 2021, 2023, Holger Berger",
-        "dependencies": {
-                "dyaml": "~>0.9.2"
-        },
-        "description": "workspace tools",
-        "license": "GPL-3.0",
-        "name": "ws_tools",
+	"authors": [
+		"Holger Berger"
+	],
 	"configurations": [
 		{
-			"name": "ws_list",
-			"versions" : ["ws_list"],
-			"targetType" : "executable",
-			"sourcePaths": ["ws_list/", "ws_common/"],
-			"importPaths": ["ws_list/", "ws_common/"],
+			"importPaths": [
+				"ws_list/",
+				"ws_common/"
+			],
 			"mainSourceFile": "ws_list/ws_list.d",
+			"name": "ws_list",
+			"sourcePaths": [
+				"ws_list/",
+				"ws_common/"
+			],
+			"targetName": "ws_list",
 			"targetPath": "bin",
-			"targetName": "ws_list"
+			"targetType": "executable",
+			"versions": [
+				"ws_list"
+			]
 		},
 		{
-			"name": "ws_allocate",
-			"versions" : ["ws_allocate"],
-			"targetType" : "executable",
-			"sourcePaths": ["ws_allocate/", "ws_common/"],
-			"importPaths": ["ws_allocate/", "ws_common/"],
+			"importPaths": [
+				"ws_allocate/",
+				"ws_common/"
+			],
 			"mainSourceFile": "ws_allocate/ws_allocate.d",
+			"name": "ws_allocate",
+			"sourcePaths": [
+				"ws_allocate/",
+				"ws_common/"
+			],
+			"targetName": "ws_allocate",
 			"targetPath": "bin",
-			"targetName": "ws_allocate"
+			"targetType": "executable",
+			"versions": [
+				"ws_allocate"
+			]
 		},
 		{
-			"name": "ws_expirer",
-			"versions" : ["ws_expirer"],
-			"targetType" : "executable",
-			"sourcePaths": ["ws_expirer/", "ws_common/"],
-			"importPaths": ["ws_expirer/", "ws_common/"],
+			"importPaths": [
+				"ws_expirer/",
+				"ws_common/"
+			],
 			"mainSourceFile": "ws_expirer/ws_expirer.d",
+			"name": "ws_expirer",
+			"sourcePaths": [
+				"ws_expirer/",
+				"ws_common/"
+			],
+			"targetName": "ws_expirer",
 			"targetPath": "bin",
-			"targetName": "ws_expirer"
+			"targetType": "executable",
+			"versions": [
+				"ws_expirer"
+			]
 		}
-	]
+	],
+	"copyright": "Copyright © 2021, 2023, Holger Berger",
+	"dependencies": {
+		"dyaml": "~>0.9.2",
+		"silly": "~>1.1.1"
+	},
+	"description": "workspace tools",
+	"license": "GPL-3.0",
+	"name": "ws_tools"
 }

@@ -139,10 +139,15 @@ public Clean_stray_result clean_stray_directories(Config config, in string fs, i
 
 }
 
+@("stray")
 unittest{
     import dyaml;
     import options;
     import std.exception;
+    import silence;
+
+    auto fd1 = SilenceFD(1);
+    auto fd2 = SilenceFD(2);
 
     try {
 		std.file.mkdir("/tmp/straywsdb");

@@ -173,7 +173,13 @@ public:
 		}
 		return ret;
 	}
+	@("validator")
 	unittest{
+		import silence;
+
+		auto fd1 = SilenceFD(1);
+    	auto fd2 = SilenceFD(2);
+
 		auto root = Loader.fromString(	"admins: [d]\n" ~
 						"workspaces:\n" ~
 						"  testws:\n"~
@@ -290,7 +296,7 @@ public:
 		return validfs;					
 	}
 
-
+	@("filesystems")
 	unittest{
 		auto root = Loader.fromString(	"default: third\n" ~
 						"workspaces:\n" ~
@@ -392,6 +398,7 @@ public:
 		return ok;
 	}
 
+	@("acl_access")
 	unittest{
 		auto root = Loader.fromString(	"admins: [d]\n" ~
 						"workspaces:\n" ~
@@ -446,6 +453,7 @@ public:
 		// throws core.exception.RangeError
 		return filesystems[filesystem].keeptime;
 	}
+	@("keeptime")
 	unittest{
 		auto root = Loader.fromString(	"admins: [d]\n" ~
 						"workspaces:\n" ~
@@ -462,7 +470,8 @@ public:
 	// is user admin?
 	bool isAdmin(const string user) const {
 		return canFind(admins, user);
-	}			
+	}		
+	@("isAdmin")	
 	unittest {
 		auto root = Loader.fromString(	"admins: [d,zoro]\n" ~
 				"\n").load();
@@ -492,7 +501,7 @@ public:
 	}
 
 	// get list of filesystem spaces
-	 string[] spaceslist(in string filesystem)  {
+	string[] spaceslist(in string filesystem)  {
 		try {
 			return filesystems[filesystem].spaces;
 		}
