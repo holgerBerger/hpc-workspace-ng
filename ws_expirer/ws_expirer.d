@@ -90,7 +90,7 @@ int main(string[] args)
 			stderr.writeln("warning: ignored config file options!");
 		}
 	}
-	auto config = new Config(configfile, opts);
+	auto config = new Config(configfile, opts, true);
 
     if(opts.filesystems.length>0) {
         // filter out unknown filesystems from commandline

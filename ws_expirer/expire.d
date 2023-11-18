@@ -5,6 +5,7 @@ import core.stdc.time : ctime, time;
 import std.string : fromStringz;
 import std.conv : to;
 import std.array : split;
+static import core.exception;
 
 import config;
 import db;
@@ -58,6 +59,7 @@ public void expire_workspaces(Config config, in string fs, in bool dryrun, in bo
                 }
             }
         } else {
+            stdout.writeln("  keeping ",id); // TODO: add expiration time
             // TODO: reminder mails
         }
     }
@@ -75,14 +77,15 @@ public void expire_workspaces(Config config, in string fs, in bool dryrun, in bo
         }
 
         auto expiration = dbentry.getExpiration;  
-        auto releasetime = dbentry.getReleasetime;  // TODO: implement this in DBv1
+        auto releasetime = dbentry.getReleasetime;  
+        auto keeptime = config.keeptime(fs);
 
         // get released time from name = id
         try {
             releasetime = to!int(id.split("-")[2]);
         } catch (core.exception.ArrayIndexError) {
             stderr.writeln("  ERROR, skiping unparsable name DB entry ", id);
-            continue
+            continue;
         }
 
         auto released = dbentry.getReleasetime; // check if it was released by user
@@ -93,10 +96,33 @@ public void expire_workspaces(Config config, in string fs, in bool dryrun, in bo
             stderr.writeln("  IGNORING released ",releasetime, " for ", id);
         }
 
-        if (  (time(cast(long *)0L) > (expiration + keeptime*24*3600)) || (time(cast(long *)0L) > releasetime + 3600) ) {
-            // TODO: checkwhich condition
+        bool releasedbyuser = false;
+        if (  (time(cast(long *)0L) > (expiration + keeptime*24*3600)) 
+                        || (time(cast(long *)0L) > releasetime + 3600)  ) {
+            if (time(cast(long *)0L) > releasetime + 3600) {
+                stdout.writeln("  deleting DB entry", id, ", was released ", fromStringz(ctime(&releasetime))[1..$-1]);
+            } else {
+                stdout.writeln("  deleting DB entry", id, ", expired ", fromStringz(ctime(&expiration))[1..$-1]);
+            }
+            if(!dryrun) {
+                db.deleteEntry(fs, id);
+            }
+
+            auto wspath = buildPath( dirName(dbentry.getWSPath()), config.deletedPath(fs), id);
+            stdout.writeln("  deleting directory: ",wspath);
+            if(!dryrun) {
+                try {
+                    std.file.rmdirRecurse(wspath);
+                } catch (FileException e) {
+                    stderr.writeln("   failed to remove: ", wspath, " (",e.msg,")");
+                }
+            }
+        } else {
+            stdout.writeln("  (keeping restorable ", id,")"); // TODO: add expiration + keeptime
         }
      
     }
 
 }
+
+// TODO: full test with prepared directory structure etc

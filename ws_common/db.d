@@ -31,8 +31,8 @@ interface Database {
 		in long expiration, in long reminder, in int extensions, 
 		in string group, in string mailaddress, in string comment);
 	// write entry
-	// expire entry
 	bool expireEntry(in string filesystem, in WsId id, in string timestamp);
+	bool deleteEntry(in string filesystem, in WsId id);
 	// ...	
 }
 

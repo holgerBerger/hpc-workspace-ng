@@ -171,7 +171,7 @@ unittest{
 					"  fs:\n" ~
 					"    database: /tmp/straywsdb\n" ~
                     "    spaces: [/tmp/strayws]\n").load();
-	auto config = new Config(root, new Options( ["" /*,"--debug"*/ ] ));
+	auto config = new Config(root, new Options( ["" /*,"--debug"*/ ] ), false);
 
     Clean_stray_result result;
     assertThrown(clean_stray_directories(config, "wrongfs", true, true));

@@ -5,6 +5,8 @@
 import std.stdio;
 import std.algorithm : canFind;
 import std.array : array;
+import std.exception;
+
 import dyaml;
 import options;   // FIXME: this imports depending on compilation context
 import db;
@@ -17,6 +19,7 @@ import core.exception;
 struct Filesystem_config {
 	string name;			// name of filesystem
 	string[] spaces;		// prefix path in filesystem for workspaces
+	string spaceselection;	// methoid to select from spaces list: random (default), uid, gid
 	string deletedPath;		// subdirectory to move deleted workspaces to, relative path
 	string database;		// path to workspace db for this filesystem
 	string[] groupdefault;		// groups having this filesystem as default
@@ -57,7 +60,7 @@ public:
 	//
 
 	// read config file into config structure
-	this(in string filename, Options opts) {
+	this(in string filename, Options opts, in bool validation) {
 		Node root;
 		this.opts = opts;
 		root = Loader.fromFile(filename).load();
@@ -65,18 +68,20 @@ public:
 			writeln("reading configuration file <", filename,">");
 		}
 		readYAML(root);
+		if (validation) {
+			if(!validator()) throw new Exception("bad config");
+		}
 	}
 
 	// read config from provided yaml node
-	this(Node root, Options opts) {
+	this(in Node root, Options opts, in bool validation) {
 		this.opts = opts;
 		readYAML(root);
+		if (validation) {
+			if(!validator()) throw new Exception("bad config");
+		}
 	}
 
-	// REVIEW why? is that still needed?
-	version(unittest)
-	this() {
-	}
 
 	// read YAML from node into config class
 	private void readYAML(Node root) {
@@ -116,7 +121,7 @@ public:
 				// read current workspace
 				Filesystem_config cfs;
 				cfs.name = fsname;
-				cfs.database = readValue!string(cnode, "database", "");
+				cfs.database = readValue!string(cnode, "database", "");  // TODO: versioing? v1:path ?
 				cfs.deletedPath = readValue!string(cnode, "deleted", "");
 				cfs.keeptime = readValue!int(cnode, "keeptime", 10);
 				cfs.maxduration = readValue!int(cnode, "maxduration", -1);
@@ -129,13 +134,96 @@ public:
 				cfs.userdefault = readArray!string(cnode, "userdefault");
 				cfs.user_acl = readArray!string(cnode, "user_acl");
 				cfs.group_acl = readArray!string(cnode, "group_acl");
+				cfs.spaceselection = readValue!string(cnode, "spaceselection", "random");
 				filesystems[fsname] = cfs;
 			}
 		}
 	}
 	
 
-	// TODO: basic validator, like: any filesystems at all? dbuid/dbgid set?
+	// basic validator
+	//  - check if filesystems are defined
+	//  - check if UIDs are defined
+	//  - check if deletedPath is defined
+	//  - check if database is defined
+	private bool validator() {
+		bool ret = true;
+		if (dbuid==-1 || dbgid==-1) {
+			ret = false; stderr.writeln("WARNING: dbuid/dbguid not in config.");
+		}
+		if (filesystems.length==0) {
+			ret = false; stderr.writeln("WARNING: no filesystems in config.");
+		}
+		if (filesystems.length>1 && default_workspace=="") {
+			ret = false; stderr.writeln("WARNING: no default_workspace in config.");
+		}
+		foreach(fs; filesystems) {
+			if (fs.database=="") {
+				ret = false; stderr.writeln("WARNING: no database for <",fs.name,"> in config.");
+			}
+			if (fs.spaces.length==0) {
+				ret = false; stderr.writeln("WARNING: no space for <",fs.name,"> in config.");
+			}
+			if (fs.deletedPath=="") {
+				ret = false; stderr.writeln("WARNING: no deletedpath for <",fs.name,"> in config.");
+			}
+			if (fs.spaces.length==0) {
+				ret = false; stderr.writeln("WARNING: no space for <",fs.name,"> in config.");
+			}
+		}
+		return ret;
+	}
+	unittest{
+		auto root = Loader.fromString(	"admins: [d]\n" ~
+						"workspaces:\n" ~
+						"  testws:\n"~
+						"    keeptime: 10\n"~
+						"\n").load();
+		bool taken=false;
+		try {
+			auto config = new Config(root, new Options( ["" /*,"--debug"*/ ] ), true);
+		} catch (Exception) {
+			taken=true;
+		}
+		assert(taken);
+
+		root = Loader.fromString(	"admins: [d]\n" ~
+				"workspaces:\n" ~
+				"  testws:\n"~
+				"    database: /tmp/db\n"~
+				"    spaces: [/tmp]\n"~
+				"    deleted: .removed\n"~
+				"  testws2:\n"~
+				"    database: /tmp/db\n"~
+				"    spaces: [/tmp]\n"~
+				"    deleted: .removed\n"~
+				"\n").load();
+		taken=false;
+		try {
+			auto config = new Config(root, new Options( ["" /*,"--debug"*/ ] ), true);
+		} catch (Exception) {
+			taken=true;
+		}
+		assert(taken);
+
+				root = Loader.fromString(	"admins: [d]\n" ~
+				"dbgid: 90\n" ~
+				"dbuid: 80\n" ~
+				"workspaces:\n" ~
+				"  testws:\n"~
+				"    database: /tmp/db\n"~
+				"    spaces: [/tmp]\n"~
+				"    deleted: .removed\n"~
+				"\n").load();
+		taken=false;
+		try {
+			auto config = new Config(root, new Options( ["" /*,"--debug"*/ ] ), true);
+		} catch (Exception) {
+			taken=true;
+		}
+		assert(!taken);
+	}
+
 
 	// TODO: reader for additional files
 
@@ -216,7 +304,7 @@ public:
 						"    userdefault: [z,y]\n"~
 						"\n").load();
 
-		auto config = new Config(root, new Options( ["" /* ,"--debug" */ ] ));
+		auto config = new Config(root, new Options( ["" /* ,"--debug" */ ] ), false);
 
 		// see if default is respected
 		assert(config.validFilesystems("c",[]) == ["third","second"]);
@@ -239,7 +327,7 @@ public:
 						"    userdefault: [z,y]\n"~
 						"\n").load();
 
-		auto config2 = new Config(root2, new Options( ["" /* ,"--debug" */ ] ));
+		auto config2 = new Config(root2, new Options( ["" /* ,"--debug" */ ] ), false);
 
 		// global, groupdefault, others
 		assert(config2.validFilesystems("d",["gb"]) == ["first","second","third"]);
@@ -316,7 +404,7 @@ public:
 						"    spaces: []\n"~
 						"\n").load();
 
-		auto config = new Config(root, new Options( ["" /*,"--debug"*/ ] ));
+		auto config = new Config(root, new Options( ["" /*,"--debug"*/ ] ), false);
 
 		// workspace no acl
 		assert(config.hasAccess("a",["cg","dg"],"testnoacl") == true);
@@ -352,15 +440,49 @@ public:
 		return filesystems[filesystem].deletedPath;
 	}
 
+	// getter for keeptime
+	int keeptime(in string filesystem) {
+		// FIXME: error check if filesystem exists
+		// throws core.exception.RangeError
+		return filesystems[filesystem].keeptime;
+	}
+	unittest{
+		auto root = Loader.fromString(	"admins: [d]\n" ~
+						"workspaces:\n" ~
+						"  testkeep:\n"~
+						"    keeptime: 10\n"~
+						"\n").load();
+
+		auto config = new Config(root, new Options( ["" /*,"--debug"*/ ] ), false);
+		assert(config.keeptime("testkeep")==10);
+		assertThrown!RangeError(config.keeptime("invalidfs"));
+	}
+
+
 	// is user admin?
 	bool isAdmin(const string user) const {
 		return canFind(admins, user);
 	}			
+	unittest {
+		auto root = Loader.fromString(	"admins: [d,zoro]\n" ~
+				"\n").load();
+
+		auto config = new Config(root, new Options( ["" /*,"--debug"*/ ] ), false);
+		assert(config.isAdmin("d")==true);
+		assert(config.isAdmin("zoro")==true);
+		assert(config.isAdmin("Zoro")==false);
+
+		root = Loader.fromString(	"dbuid: 0\n" ~
+				"\n").load();
+		assert(config.isAdmin("Zoro")==false);
+	}
 
 	// get DB matching the DB type of the config
 	Database openDB() {
 		// FIXME: check database string for file:// pattern, if no : assume file
-		// FIXME: should this have (fs) argument, and each fs be ablte o have its own DB format?
+		// FIXME: should this have (fs) argument, and each fs be able to have its own DB format?
+		//        now there is one DB and it contains information about several FS, but all FS have
+		//        to have some DB type. Would not matter if DBv2 would use another config file.  
 		return new FilesystemDBV1(this);
 	}
 

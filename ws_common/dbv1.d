@@ -297,7 +297,8 @@ public:
 	}
 
 	// expire DB entry by moving it to removed location
-	bool expireEntry(in string filesystem, in WsId id, in string timestamp) {
+	//  returns false if failed
+	bool expireEntry(in string filesystem, in WsId id, in string timestamp)  {
 		auto filename = buildPath(config.database(filesystem), id);
 		auto deletedname = buildPath(config.database(filesystem), config.deletedPath(filesystem), id ~ "-" ~ timestamp);
 		try {
@@ -311,11 +312,26 @@ public:
         }
 		return true;
 	}
+	
+	// delete DB entry 
+	//  returns false if failed
+	bool deleteEntry(in string filesystem, in WsId id)  {
+		auto filename = buildPath(config.database(filesystem), config.deletedPath(filesystem), id);
+		try {
+			debug{
+				stderr.writeln("   rm ", filename);
+			}
+			std.file.remove(filename);
+		} catch (FileException e) {
+            stderr.writeln("   ERROR, failed to remove DB entry: ", filesystem,":", id, " (",e.msg, ")");
+			return false;
+        }
+		return true;		
+	}
 }
 
 
-
-unittest {
+unittest {		
 	// test internal interface
 
 	auto db1 = new DBEntryV1();
@@ -339,7 +355,7 @@ unittest {
 	import options;
 
 	try {
-		std.file.mkdir("/tmp/wsdb");
+		std.file.mkdirRecurse("/tmp/wsdb/.removed");
 	} 
 	catch (std.file.FileException)
 	{
@@ -348,8 +364,9 @@ unittest {
 
 	auto root = Loader.fromString("filesystems:\n" ~
 					"  fs:\n" ~
+					"    deleted: .removed\n" ~
 					"    database: /tmp/wsdb\n").load();
-	auto config = new Config(root, new Options( ["" /*,"--debug"*/ ] ));
+	auto config = new Config(root, new Options( ["" /*,"--debug"*/ ] ), false);
 
 	auto db = new FilesystemDBV1(config);
 
@@ -366,4 +383,16 @@ unittest {
 	
 	// should fail, invalid user
 	assertThrown(db.readEntry("fs", "user-Atestws", false));
+
+	assert(!db.expireEntry("fs", "usera-ZZZZZ", "1234567"));
+	assert(db.expireEntry("fs", "usera-Atestws", "1234567"));
+
+	// should be in deleted
+	assert(db.matchPattern("Atestws*", "fs", "usera", [], true, false).length==1);
+	// should not be in active workspaces
+	assert(db.matchPattern("Atestws", "fs", "usera", [], false, false).length==0);
+	// delete it
+	assert(db.deleteEntry("fs", "usera-Atestws-1234567"));
+	// we can only delete once
+	assert(!db.deleteEntry("fs", "usera-Atestws-1234567"));
 }

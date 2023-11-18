@@ -70,7 +70,7 @@ int main(string[] args)
 			stderr.writeln("warning: ignored config file options!");
 		}
 	}
-	auto config =  new Config(configfile, opts);
+	auto config =  new Config(configfile, opts, true);
 
 	// root and admins can choose usernames
 	string username = getUsername();	// used for rights checks
@@ -172,8 +172,4 @@ int main(string[] args)
 		
 	}
 	return 0;
-}
-
-version(unittest)
-unittest {
 }
