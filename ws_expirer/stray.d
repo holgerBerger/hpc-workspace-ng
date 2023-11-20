@@ -119,13 +119,13 @@ public Clean_stray_result clean_stray_directories(Config config, in string fs, i
                     // FIXME: is that safe against symlink attacks?
                     // TODO: add timeout
                     std.file.rmdirRecurse(buildPath(founddir.space, config.deletedPath(fs)));
-                    stderr.writeln("   remove ", founddir.dir);
+                    stdout.writeln("   remove ", founddir.dir);
                 } 
                 catch (FileException e) {
-                    stderr.writeln("   failed to remove: ", founddir.dir, " (",e.msg,")");
+                    stdout.writeln("   failed to remove: ", founddir.dir, " (",e.msg,")");
                 }
             } else {
-                stderr.writeln("   would remove ", founddir.dir);
+                stdout.writeln("   would remove ", founddir.dir);
             }
             result.invalid_deleted++;
         } else {
